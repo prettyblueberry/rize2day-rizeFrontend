@@ -161,6 +161,8 @@ export const SigningCosmWasmProvider = ({ children }) => {
       const accounts = await offlineSigner.getAccounts();
       const address = accounts[0].address;
       setWalletAddress(address);
+      dispatch(changeNetworkSymbol(PLATFORM_NETWORKS.COREUM));
+      dispatch(changeWalletAddress(address));
       localStorage.setItem("address", address);
     } catch (err) {
       console.log("Connect Wallet: ", err);
@@ -174,6 +176,8 @@ export const SigningCosmWasmProvider = ({ children }) => {
       signingClient.disconnect();
     }
     setWalletAddress("");
+    dispatch(changeNetworkSymbol(0));
+    dispatch(changeWalletAddress(""));
     setSigningClient(null);
   };
 

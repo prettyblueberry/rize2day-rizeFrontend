@@ -6,8 +6,12 @@ import ButtonPrimary from "shared/Button/ButtonPrimary";
 import Icon from "components/Icon";
 import Checkbox from "@mui/material/Checkbox";
 import NcModal from "shared/NcModal/NcModal";
+import { useAppSelector } from "app/hooks";
+import { selectCurrentNetworkSymbol } from "app/reducers/auth.reducers";
+import { getItemPriceUnitText } from "../ItemPriceUnitText";
 
 const Bid = ({ className = "", onOk, onCancel, nft = {} }) => {
+  const currentNetworkSymbol = useAppSelector(selectCurrentNetworkSymbol);
   const [price, setPrice] = useState(0);
   const [priceIsInvalid, setPriceIsInvalid] = useState(false);
   const [warningStr, setWarningStr] = useState("");
@@ -94,12 +98,12 @@ const Bid = ({ className = "", onOk, onCancel, nft = {} }) => {
       {nft && nft.bids.length > 0 && (
         <div className={styles.stageBid}>{`( Current Max bid : ${Number(
           nft.bids[nft.bids.length - 1].price
-        )} RIZE)`}</div>
+        )} ${getItemPriceUnitText(nft, currentNetworkSymbol)})`}</div>
       )}
       {nft && nft.bids.length === 0 && (
         <div className={styles.stageBid}>{`( Started price : ${Number(
           nft.price
-        )} RIZE)`}</div>
+        )} ${getItemPriceUnitText(nft, currentNetworkSymbol)})`}</div>
       )}
 
       <div className={styles.table}>

@@ -6,9 +6,9 @@ import { config } from "app/config.js";
 interface Props {
   className?: string;
   contentClassName?: string;
-  src?: string,
-  nftId?: string,
-  itemLength?: number
+  src?: string;
+  nftId?: string;
+  itemLength?: number;
 }
 
 const RemainingTimeNftCard: FC<Props> = ({
@@ -16,38 +16,55 @@ const RemainingTimeNftCard: FC<Props> = ({
   contentClassName = "right-5 top-1/2 -translate-y-1/2",
   src,
   nftId,
-  itemLength = 0
+  itemLength = 0,
 }) => {
-
   const [fileLength, setFileLength] = useState("00m:00s");
 
   useEffect(() => {
-    if (isEmpty(nftId) === false) {
+    if (isEmpty(nftId) === false && itemLength <= 0) {
       var x = document.getElementById(`${nftId}x`) as any;
       x.onloadedmetadata = function () {
         let secondLen = 0;
         if (isEmpty(x) === false) secondLen = x?.duration;
         if (itemLength === 0 && secondLen > 0) {
-          axios.post(
-            `${config.API_URL}api/item/updateTimeLength`,
-            {
+          axios
+            .post(`${config.API_URL}api/item/updateTimeLength`, {
               itemId: nftId,
-              timeLength: secondLen
-            }
-          )
-            .then((docs) => { })
-            .catch((error) => { });
+              timeLength: secondLen,
+            })
+            .then((docs) => {})
+            .catch((error) => {});
         }
         let dateObj = new Date(secondLen * 1000);
         // let hours = isNaN(dateObj.getUTCHours()) === false? dateObj.getUTCHours() : 0;
-        let minutes = isNaN(dateObj.getUTCMinutes()) === false ? dateObj.getUTCMinutes() : 0;
-        let seconds = isNaN(dateObj.getSeconds()) === false ? dateObj.getSeconds() : 0;
-        // let timeString = hours.toString().padStart(2, '0') + 'h:' + 
+        let minutes =
+          isNaN(dateObj.getUTCMinutes()) === false
+            ? dateObj.getUTCMinutes()
+            : 0;
+        let seconds =
+          isNaN(dateObj.getSeconds()) === false ? dateObj.getSeconds() : 0;
+        // let timeString = hours.toString().padStart(2, '0') + 'h:' +
         let timeString =
-          minutes.toString().padStart(2, '0') + 'm:' +
-          seconds.toString().padStart(2, '0') + 's';
+          minutes.toString().padStart(2, "0") +
+          "m:" +
+          seconds.toString().padStart(2, "0") +
+          "s";
         setFileLength(timeString);
       };
+    } else if (itemLength > 0) {
+      let dateObj = new Date(itemLength * 1000);
+      // let hours = isNaN(dateObj.getUTCHours()) === false? dateObj.getUTCHours() : 0;
+      let minutes =
+        isNaN(dateObj.getUTCMinutes()) === false ? dateObj.getUTCMinutes() : 0;
+      let seconds =
+        isNaN(dateObj.getSeconds()) === false ? dateObj.getSeconds() : 0;
+      // let timeString = hours.toString().padStart(2, '0') + 'h:' +
+      let timeString =
+        minutes.toString().padStart(2, "0") +
+        "m:" +
+        seconds.toString().padStart(2, "0") +
+        "s";
+      setFileLength(timeString);
     }
   }, [nftId]);
 
@@ -64,8 +81,8 @@ const RemainingTimeNftCard: FC<Props> = ({
           fill="currentColor"
         />
       </svg>
-      <div className="w-0 h-0" >
-        <audio id={`${nftId}x`} preload="metadata"  >
+      <div className="w-0 h-0">
+        <audio id={`${nftId}x`} preload="metadata">
           <source src={`${src}`} type="audio/mpeg" />
           Your browser does not support the audio element.
         </audio>

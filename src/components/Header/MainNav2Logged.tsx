@@ -1,9 +1,9 @@
 import { Fragment, FC, useEffect, useState, useRef } from "react";
 import { Link } from "react-router-dom";
 import Logo from "shared/Logo/Logo";
-import { Popover, Transition } from "@headlessui/react";
+import Web3 from "web3";
+import clsx from "clsx";
 import MenuBar from "shared/MenuBar/MenuBar";
-import Message from "shared/Message/Message";
 import { IoWalletOutline } from "react-icons/io5";
 import AvatarDropdown from "./AvatarDropdown";
 import ButtonPrimary from "shared/Button/ButtonPrimary";
@@ -11,13 +11,17 @@ import { useSigningClient } from "app/cosmwasm";
 import axios from "axios";
 import jwt_decode from "jwt-decode";
 import md5 from "md5";
-import { config } from "app/config.js";
+import SearchAutocomplete from "./SearchAutocomplete";
+import { config, PLATFORM_NETWORKS } from "app/config.js";
 import { useNavigate } from "react-router-dom";
 import { useAppDispatch, useAppSelector } from "app/hooks";
 import {
   changeWalletAddress,
   changeWalletStatus,
   changeAuthor,
+  selectCurrentNetworkSymbol,
+  changeGlobalProvider,
+  selectCurrentWallet,
 } from "app/reducers/auth.reducers";
 import {
   selectCurrentUser,
@@ -26,8 +30,29 @@ import {
 import { getShortAddress, isEmpty } from "app/methods";
 import Settings from "components/Settings";
 import NotifyDropdown from "./NotifyDropdown";
+import Web3Modal from "web3modal";
+import { providerOptions } from "InteractWithSmartContract/providerOptions";
+import {
+  changeNetwork,
+  getNetworkSymbolByChainId,
+  isSupportedNetwork,
+  isSuppportedEVMChain,
+} from "InteractWithSmartContract/interact";
+import { toast } from "react-toastify";
+import {
+  changeNetworkSymbol,
+  selectIsCommunityMember,
+  changeMemberOrNot,
+} from "app/reducers/auth.reducers";
 
-export interface MainNav2LoggedProps { }
+export interface MainNav2LoggedProps {}
+
+export const web3Modal = new Web3Modal({
+  network: "mainnet",
+  cacheProvider: false,
+  disableInjectedProvider: false,
+  providerOptions,
+});
 
 const MainNav2Logged: FC<MainNav2LoggedProps> = () => {
   const dispatch = useAppDispatch();
@@ -36,18 +61,20 @@ const MainNav2Logged: FC<MainNav2LoggedProps> = () => {
     client,
     signingClient,
     loadClient,
-    connectWallet,
-    walletAddress,
+    connectWallet: connectToCoreum,
+    disconnect: disconnectFromCoreum,
   }: any = useSigningClient();
   const [tabActive, setTabActive] = useState(0);
   const user = useAppSelector(selectCurrentUser);
   const walletStatus = useAppSelector(selectWalletStatus);
+  const currentNetworkSymbol = useAppSelector(selectCurrentNetworkSymbol);
+  const walletAddress = useAppSelector(selectCurrentWallet);
   const pagesRef = useRef(null);
   const chainRef = useRef(null);
   const [openState1, setOpenState1] = useState(false);
   const [openState2, setOpenState2] = useState(false);
+  const [provider, setProvider] = useState(null);
 
-  console.log(">>>>>>>", walletAddress);
   useEffect(() => {
     if (!isEmpty(walletAddress)) {
       dispatch(changeWalletStatus(true));
@@ -100,16 +127,16 @@ const MainNav2Logged: FC<MainNav2LoggedProps> = () => {
     (async () => {
       try {
         if (!signingClient && localStorage.getItem("address")) {
-          await connectWallet();
+          await connectToCoreum();
         }
       } catch (err) {
-        setTimeout(() => connectWallet(), 1000);
+        setTimeout(() => connectToCoreum(), 1000);
       }
     })();
-  }, [signingClient, connectWallet]);
+  }, [signingClient, connectToCoreum]);
 
   const authenticate = async () => {
-    await connectWallet();
+    await connectToCoreum();
   };
 
   let timeout1, timeout2; // NodeJS.Timeout
@@ -119,14 +146,14 @@ const MainNav2Logged: FC<MainNav2LoggedProps> = () => {
     // log the current open state in React (toggle open state)
 
     // toggle the menu by clicking on buttonRef
-    if (type === 'Pages') {
-      setOpenState1((prev) => !prev)
-      pagesRef?.current?.click() // eslint-disable-line
+    if (type === "Pages") {
+      setOpenState1((prev) => !prev);
+      pagesRef?.current?.click(); // eslint-disable-line
     } else {
-      setOpenState2((prev) => !prev)
-      chainRef?.current?.click()
+      setOpenState2((prev) => !prev);
+      chainRef?.current?.click();
     }
-  }
+  };
 
   const onHover = (open, action, type) => {
     if (type === "Pages") {
@@ -135,9 +162,9 @@ const MainNav2Logged: FC<MainNav2LoggedProps> = () => {
         (open && openState1 && action === "onMouseLeave")
       ) {
         // clear the old timeout, if any
-        clearTimeout(timeout1)
+        clearTimeout(timeout1);
         // open the modal after a timeout
-        timeout1 = setTimeout(() => toggleMenu(open, type), timeoutDuration)
+        timeout1 = setTimeout(() => toggleMenu(open, type), timeoutDuration);
       }
     } else {
       if (
@@ -145,12 +172,104 @@ const MainNav2Logged: FC<MainNav2LoggedProps> = () => {
         (open && openState2 && action === "onMouseLeave")
       ) {
         // clear the old timeout, if any
-        clearTimeout(timeout2)
+        clearTimeout(timeout2);
         // open the modal after a timeout
-        timeout2 = setTimeout(() => toggleMenu(open, type), timeoutDuration)
+        timeout2 = setTimeout(() => toggleMenu(open, type), timeoutDuration);
       }
     }
-  }
+  };
+
+  const onClickConnectEVMWallet = async () => {
+    try {
+      const provider = await web3Modal.connect();
+
+      const web3 = new Web3(provider);
+
+      const accounts = await web3.eth.getAccounts();
+
+      setProvider(provider);
+
+      if (accounts[0]) {
+        dispatch(changeWalletAddress(accounts[0]));
+        isCommunityMember(accounts[0]);
+      } else {
+        dispatch(changeWalletAddress(""));
+        dispatch(changeMemberOrNot(false));
+      }
+      dispatch(changeGlobalProvider(provider));
+    } catch (error) {
+      console.log(error);
+      dispatch(changeWalletAddress(""));
+    }
+  };
+
+  useEffect(() => {
+    isCommunityMember(walletAddress);
+  }, [walletAddress, walletStatus]);
+
+  const isCommunityMember = (walletAddress) => {
+    try {
+      axios
+        .post(`${config.baseUrl}users/isCommunityMember`, {
+          wallet: walletAddress || "",
+        })
+        .then((response) => {
+          console.log("isM response.data ===> ", response.data);
+          let isM = response.data.data || false;
+          console.log("isM ===> ", isM);
+          dispatch(changeMemberOrNot(isM));
+        });
+    } catch (error) {
+      console.log("isM error ===> ", error);
+      dispatch(changeMemberOrNot(false));
+    }
+  };
+
+  const onClickChangeEVMNetwork = async (networkSymbol) => {
+    try {
+      let switchingResult = false;
+      let result = await changeNetwork(networkSymbol);
+      if (result) {
+        if (result.success === true) {
+          dispatch(changeNetworkSymbol(networkSymbol));
+          switchingResult = true;
+        } else {
+          toast.warning(
+            <div>
+              <span>{result.message}</span>
+              <br></br>
+              <span>
+                Please check your wallet. Try adding the chain to Wallet first.
+              </span>
+            </div>
+          );
+        }
+      }
+      return switchingResult;
+    } catch (error) {
+      console.log(error);
+      return false;
+    }
+  };
+
+  const handleSelectNetwork = async (networkSymbol) => {
+    let previousNetworkSymbol = currentNetworkSymbol;
+    if (networkSymbol === PLATFORM_NETWORKS.COREUM) {
+      await connectToCoreum();
+    } else if (networkSymbol === PLATFORM_NETWORKS.NEAR) {
+      disconnectFromCoreum();
+    } else {
+      disconnectFromCoreum();
+      let switchingResult = await onClickChangeEVMNetwork(networkSymbol);
+      if (
+        switchingResult === false &&
+        isSupportedNetwork(previousNetworkSymbol) === true
+      ) {
+        handleSelectNetwork(previousNetworkSymbol);
+      }
+      if (switchingResult === true) onClickConnectEVMWallet();
+    }
+  };
 
   return (
     <div className={`nc-MainNav2Logged relative z-10 ${"onTop "}`}>

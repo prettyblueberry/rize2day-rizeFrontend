@@ -13,22 +13,28 @@ import axios from "axios";
 import CardFlip from "react-card-flip";
 import { NFT_EFFECT } from "./EffectListBox";
 import TileEffect from "./TileEffect/TileEffect";
-import { selectCurrentUser } from "app/reducers/auth.reducers";
-import { config } from "app/config";
+import {
+  selectCurrentNetworkSymbol,
+  selectCurrentUser,
+} from "app/reducers/auth.reducers";
+import { ACTIVE_CHAINS, config, PLATFORM_NETWORKS } from "app/config";
 import { isEmpty } from "app/methods";
 import { useNavigate } from "react-router-dom";
 import ItemTypeVideoIcon from "./ItemTypeVideoIcon";
 import { AiOutlineMessage } from "react-icons/ai";
 import { toast } from "react-toastify";
 import defaultAvatar from "images/default_avatar.png";
+import NetworkLogo from "./NetworkLogo";
+import { isSupportedEVMNetwork } from "InteractWithSmartContract/interact";
+import VideoForPreview from "./VideoForPreview";
 
 const CardNFTVideo = (props: any) => {
+  const currentUsr = useAppSelector(selectCurrentUser);
+  const currentNetworkSymbol = useAppSelector(selectCurrentNetworkSymbol);
   const [DEMO_NFT_ID] = React.useState(nanoid());
-
   const [nftItem, setNftItem] = useState(props?.item || {});
   const [hideFav, setHideFav] = useState(props?.hideHeart || false);
   const navigate = useNavigate();
-  const currentUsr = useAppSelector(selectCurrentUser);
   const [isLiked, setIsLiked] = useState(false);
   const [isFlipped, setFlipped] = useState(false);
 
@@ -214,9 +220,23 @@ const CardNFTVideo = (props: any) => {
     }
   };
 
+  const isVideo = (fileName) => {
+    if (fileName && fileName.toString() !== "") {
+      if (
+        fileName.toString().includes("mp4") === true ||
+        fileName.toString().includes("MP4") === true
+      ) {
+        return true;
+      }
+    }
+    return false;
+  };
+
   const renderView = () => (
     <div
-      className={`nc-CardNFTMusic z-10 w-full m-auto relative flex flex-col group [ nc-box-has-hover nc-dark-box-bg-has-hover ] ${props?.className}`}
+      className={`nc-CardNFTMusic z-10 w-full m-auto relative flex flex-col group [ nc-box-has-hover nc-dark-box-bg-has-hover ] ${
+        props?.isHome ? "!border-[#22c55e]" : ""
+      } ${props?.className}`}
       data-nc-id="CardNFTVideo"
     >
       <div className="relative flex-shrink-0 ">
@@ -237,15 +257,27 @@ const CardNFTVideo = (props: any) => {
               : navigate("/nft-detail");
           }}
         >
-          <NcImage
-            containerClassName="block aspect-w-12 aspect-h-10 w-full h-0 rounded-3xl overflow-hidden z-0"
-            src={
-              nftItem?.logoURL
-                ? `${config.API_URL}uploads/${nftItem?.logoURL}`
-                : props?.featuredImage
-            }
-            className="object-cover w-full h-full group-hover:scale-[1.03] transition-transform duration-300 ease-in-out cursor-pointer will-change-transform"
-          />
+          {isVideo(nftItem?.logoURL) === false ? (
+            <NcImage
+              containerClassName="block aspect-w-12 aspect-h-10 w-full h-0 rounded-3xl overflow-hidden z-0"
+              src={
+                nftItem?.logoURL
+                  ? `${config.API_URL}uploads/${nftItem?.logoURL}`
+                  : props?.featuredImage
+              }
+              className="object-cover w-full h-full group-hover:scale-[1.03] transition-transform duration-300 ease-in-out cursor-pointer will-change-transform"
+            />
+          ) : (
+            <VideoForPreview
+              src={
+                nftItem?.logoURL
+                  ? `${config.API_URL}uploads/${nftItem?.logoURL || ""}`
+                  : ""
+              }
+              nftId={nftItem?._id || DEMO_NFT_ID}
+              className="block aspect-w-12 aspect-h-10 w-full h-0 rounded-3xl overflow-hidden z-0"
+            />
+          )}
         </div>
         <ItemTypeVideoIcon className="absolute top-3 left-3 z-10 w-8 md:w-10 !h-9" />
         <div className="flex flex-row absolute top-3 right-3 z-10 !h-10 bg-black/50 px-3.5 items-center justify-center rounded-full text-white">
@@ -290,80 +322,73 @@ const CardNFTVideo = (props: any) => {
                 : navigate("/nft-detail");
             }}
           >
-            {(nftItem as any)?.name || ""}
+            {((nftItem as any)?.name || "").toString().length > 15
+              ? ((nftItem as any)?.name || "").toString().substring(0, 15) +
+                "..."
+              : ((nftItem as any)?.name || "").toString()}
           </h2>
-          <div>
-            {!isEmpty((nftItem as any).owner) && (
-              <div
-                onClick={() =>
-                  navigate(
-                    `/page-author/${(nftItem as any)?.owner?._id || "1"}`
-                  )
-                }
-              >
-                <Avatar
-                  imgUrl={
-                    (nftItem as any)?.owner?.avatar
-                      ? `${config.API_URL}uploads/${
-                          (nftItem as any)?.owner.avatar
-                        }`
-                      : defaultAvatar
+          <div className="flex justify-between gap-2">
+            <div>
+              {!isEmpty((nftItem as any).owner) && (
+                <div
+                  onClick={() =>
+                    navigate(
+                      `/page-author/${(nftItem as any)?.owner?._id || "1"}`
+                    )
                   }
-                  sizeClass="w-8 h-8 sm:w-8 sm:h-8"
-                />
-              </div>
-            )}
-          </div>
-          {/* <span className="text-neutral-700 dark:text-neutral-400 text-xs">
+                >
+                  <Avatar
+                    imgUrl={
+                      (nftItem as any)?.owner?.avatar
+                        ? `${config.API_URL}uploads/${
+                            (nftItem as any)?.owner.avatar
+                          }`
+                        : defaultAvatar
+                    }
+                    sizeClass="w-8 h-8 sm:w-8 sm:h-8"
+                  />
+                </div>
+              )}
+            </div>
+            {/* <span className="text-neutral-700 dark:text-neutral-400 text-xs">
                 {(nftItem as any)?.stockAmount ? (nftItem as any).stockAmount : 1} in stock
               </span> */}
-        </div>
-        <div className="w-2d4 w-full border-b border-neutral-100 dark:border-neutral-600"></div>
 
-        <div className="flex justify-between items-end mt-3.5">
-          <Prices
-            labelTextClassName="bg-white dark:bg-[#191818] dark:group-hover:bg-[#202020] group-hover:bg-neutral-50"
-            labelText={
-              (nftItem as any)?.isSale == 2
-                ? (nftItem as any)?.bids && (nftItem as any).bids.length > 0
-                  ? "Current Bid"
-                  : "Start price"
-                : (nftItem as any)?.isSale == 1
-                ? "Sale Price"
-                : "Price"
-            }
-            price={
-              (nftItem as any)?.isSale == 2
-                ? `${
-                    (nftItem as any)?.bids && (nftItem as any)?.bids.length > 0
-                      ? (nftItem as any)?.bids[
-                          (nftItem as any)?.bids.length - 1
-                        ].price
-                        ? (nftItem as any)?.bids[
-                            (nftItem as any)?.bids.length - 1
-                          ].price
-                        : 0
-                      : (nftItem as any)?.price
-                  } 
-                  RIZE 
-                  `
-                : (nftItem as any)?.isSale == 1
-                ? `${(nftItem as any)?.price || 0} 
-                    RIZE
-                  `
-                : "Not Listed"
-            }
-          />
-          {/* <span className="block text-xs font-normal tracking-wide text-neutral-500 dark:text-neutral-400">
-            {nftItem?.stockAmount ? nftItem.stockAmount : 1} in stock
-          </span> */}
-          {/* <div className="text-right">
+            <NetworkLogo
+              networkSymbol={
+                (nftItem as any)?.networkSymbol || PLATFORM_NETWORKS.COREUM
+              }
+              className=""
+            />
+          </div>
+        </div>
+        {!props?.isHome && (
+          <div className="w-2d4 w-full border-b border-neutral-100 dark:border-neutral-600"></div>
+        )}
+
+        {!props?.isHome && (
+          <div className="flex justify-between items-end mt-3.5">
+            <Prices
+              labelTextClassName="bg-white dark:bg-[#191818] dark:group-hover:bg-[#202020] group-hover:bg-neutral-50"
+              labelText={
+                (nftItem as any)?.isSale == 2
+                  ? (nftItem as any)?.bids && (nftItem as any).bids.length > 0
+                    ? "Current Bid"
+                    : "Start price"
+                  : (nftItem as any)?.isSale == 1
+                  ? "Sale Price"
+                  : "Price"
+              }
+              item={nftItem}
+            />
+            {/* <div className="text-right">
             <span className="block text-xs font-normal tracking-wide text-neutral-500 dark:text-neutral-400">
               Remaining time
             </span>
             <span className="block font-semibold mt-0.5">3h : 15m : 20s</span>
           </div> */}
-        </div>
+          </div>
+        )}
       </div>
     </div>
   );

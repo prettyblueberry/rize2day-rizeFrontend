@@ -12,29 +12,39 @@ import TimeCountDown from "./TimeCountDown";
 import collectionPng from "images/nfts/collection.png";
 import VerifyIcon from "components/VerifyIcon";
 import { useNavigate } from "react-router-dom";
-import { config } from "app/config";
+import { config, FILE_TYPE } from "app/config";
 import { useAppSelector } from "app/hooks";
-import { selectDetailOfAnItem, selectCOREPrice } from "app/reducers/nft.reducers";
-import { selectCurrentChainId, selectCurrentUser, selectCurrentWallet, selectGlobalProvider, selectWalletStatus } from "app/reducers/auth.reducers";
+import {
+  selectDetailOfAnItem,
+  selectCOREPrice,
+} from "app/reducers/nft.reducers";
+import {
+  selectCurrentNetworkSymbol,
+  selectCurrentUser,
+  selectCurrentWallet,
+  selectGlobalProvider,
+  selectWalletStatus,
+} from "app/reducers/auth.reducers";
 import { isEmpty } from "app/methods";
 import { toast } from "react-toastify";
 // import { acceptOrEndBid, destroySale, getBalanceOf, placeBid } from "InteractWithSmartContract/interact";
 import NcModal from "shared/NcModal/NcModal";
 import Bid from "../../containers/NftDetailPage/Bid";
 import Accept from "../../containers/NftDetailPage/Accept";
-import Backdrop from '@mui/material/Backdrop';
-import CircularProgress from '@mui/material/CircularProgress';
+import Backdrop from "@mui/material/Backdrop";
+import CircularProgress from "@mui/material/CircularProgress";
 import NextPrev from "shared/NextPrev/NextPrev";
 import axios from "axios";
 import { getSystemTime } from "utils/utils";
+import VideoForPreview from "components/VideoForPreview";
 
 const CardLarge1 = ({
   className = "",
   isShowing = true,
-  onClickNext = () => { },
-  onClickPrev = () => { },
+  onClickNext = () => {},
+  onClickPrev = () => {},
   featuredImgUrl = nftsLargeImgs[0],
-  item
+  item,
 }) => {
   const [visibleModalAccept, setVisibleModalAccept] = useState(false);
   const [visibleModalBid, setVisibleModalBid] = useState(false);
@@ -45,7 +55,7 @@ const CardLarge1 = ({
   const globalCOREPrice = useAppSelector(selectCOREPrice);
   const [processing, setProcessing] = useState(false);
   const globalAccount = useAppSelector(selectCurrentWallet);
-  const globalChainId = useAppSelector(selectCurrentChainId);
+  const globalChainId = useAppSelector(selectCurrentNetworkSymbol);
   const walletStatus = useAppSelector(selectWalletStatus);
   const globalProvider = useAppSelector(selectGlobalProvider);
   const [timeLeft, setTimeLeft] = useState({});
@@ -59,8 +69,8 @@ const CardLarge1 = ({
     (async () => {
       const res = await getSystemTime();
       setSysTime(res);
-    })()
-  }, [item])
+    })();
+  }, [item]);
 
   const randomTitle = [
     "Walking On Air ",
@@ -79,23 +89,29 @@ const CardLarge1 = ({
       toast.warn("Please connect and unlock your wallet.");
       return false;
     }
-    if (globalAccount && currentUsr && currentUsr.address && globalAccount.toLowerCase() !== currentUsr.address.toLowerCase()) {
-      toast.warn("Wallet addresses are not equal. Please check current wallet to your registered wallet.");
+    if (
+      globalAccount &&
+      currentUsr &&
+      currentUsr.address &&
+      globalAccount.toLowerCase() !== currentUsr.address.toLowerCase()
+    ) {
+      toast.warn(
+        "Wallet addresses are not equal. Please check current wallet to your registered wallet."
+      );
       return false;
     }
     return true;
-  }
+  };
 
   const isVideo = (item) => {
     return item?.musicURL?.toLowerCase().includes("mp4") ? true : false;
-  }
+  };
 
   const getLeftDuration = (created, period, curTime) => {
-
-    var createdTime = (new Date(created)).getTime();
+    var createdTime = new Date(created).getTime();
     var diff = createdTime + period * 24 * 3600 * 1000 - curTime;
-    return diff = diff / 1000;
-  }
+    return (diff = diff / 1000);
+  };
 
   const onBid = async (bidPrice) => {
     setVisibleModalBid(false);
@@ -107,25 +123,33 @@ const CardLarge1 = ({
       return;
     }
 
-    if (getLeftDuration((consideringItem)?.auctionStarted, (consideringItem)?.auctionPeriod, Date.now()) <= 12) {
+    if (
+      getLeftDuration(
+        consideringItem?.auctionStarted,
+        consideringItem?.auctionPeriod,
+        Date.now()
+      ) <= 12
+    ) {
       setTimeout(() => {
         setProcessing(false);
-      }, 15000)
+      }, 15000);
     }
     // let result = await placeBid(new Web3(globalProvider), currentUsr?.address, (consideringItem)?._id, Number(bidPrice), (consideringItem)?.chainId || 1);
     // if((result).success === true) toast.success((result).message);
-    // else toast.error((result).message);    
+    // else toast.error((result).message);
     setProcessing(false);
-  }
+  };
 
   const removeSale = async () => {
-    if ((consideringItem)?.owner?._id !== currentUsr?._id) {
+    if (consideringItem?.owner?._id !== currentUsr?._id) {
       toast.warn("You are not the owner of this nft.");
       return;
     }
 
-    if ((consideringItem)?.bids.length > 0 && (consideringItem)?.isSale === 2) {
-      toast.warn("You cannot remove it from sale because you had one or more bid(s) already.");
+    if (consideringItem?.bids.length > 0 && consideringItem?.isSale === 2) {
+      toast.warn(
+        "You cannot remove it from sale because you had one or more bid(s) already."
+      );
       return;
     }
 
@@ -149,9 +173,9 @@ const CardLarge1 = ({
     // }
     // let result = await destroySale(new Web3(globalProvider), currentUsr?.address, (consideringItem)?._id, (consideringItem)?.chainId || 1);
     // if((result).success === true) toast.success((result).message);
-    // else toast.error((result).message);    
+    // else toast.error((result).message);
     setProcessing(false);
-  }
+  };
 
   const onAccept = async () => {
     setVisibleModalAccept(false);
@@ -165,49 +189,59 @@ const CardLarge1 = ({
 
     // let result = await acceptOrEndBid(new Web3(globalProvider), currentUsr?.address, (consideringItem)?._id, (consideringItem)?.chainId || 1);
     // if((result).success === true) toast.success((result).message);
-    // else toast.error((result).message);    
+    // else toast.error((result).message);
     setProcessing(false);
-  }
+  };
 
   const setFavItem = async (target_id, user_id) => {
     if (isEmpty(target_id) || isEmpty(user_id)) return;
-    await axios.post(`${config.API_URL}api/users/set_fav_item`, { target_id: target_id, user_id: user_id }, {
-      headers:
-      {
-        "x-access-token": localStorage.getItem("jwtToken")
-      }
-    }).then(async (result) => {
-      await axios.post(`${config.API_URL}api/item/get_detail`, { id: (consideringItem)?._id || "" }, {
-        headers:
+    await axios
+      .post(
+        `${config.API_URL}api/users/set_fav_item`,
+        { target_id: target_id, user_id: user_id },
         {
-          "x-access-token": localStorage.getItem("jwtToken")
+          headers: {
+            "x-access-token": localStorage.getItem("jwtToken"),
+          },
         }
-      }).then((result) => {
-        checkIsLiked();
-        setRefresh(!refresh);
-      }).catch(() => {
+      )
+      .then(async (result) => {
+        await axios
+          .post(
+            `${config.API_URL}api/item/get_detail`,
+            { id: consideringItem?._id || "" },
+            {
+              headers: {
+                "x-access-token": localStorage.getItem("jwtToken"),
+              },
+            }
+          )
+          .then((result) => {
+            checkIsLiked();
+            setRefresh(!refresh);
+          })
+          .catch(() => {});
       });
-    });
-  }
+  };
 
   const toggleFav = () => {
-    setFavItem((consideringItem)?._id, currentUsr?._id || "");
-  }
+    setFavItem(consideringItem?._id, currentUsr?._id || "");
+  };
 
   const checkIsLiked = () => {
-    if ((consideringItem) && currentUsr) {
-      if (!(consideringItem).likes) {
+    if (consideringItem && currentUsr) {
+      if (!consideringItem.likes) {
         setIsLiked(false);
       }
 
-      var isIn = (consideringItem)?.likes?.includes(currentUsr._id) || false;
+      var isIn = consideringItem?.likes?.includes(currentUsr._id) || false;
 
       setIsLiked(isIn);
     }
-  }
+  };
 
   const calculateTimeLeft = (created, period) => {
-    let difference = created * 1000 + period * 1000 - (curTime.current++) * 1000;
+    let difference = created * 1000 + period * 1000 - curTime.current++ * 1000;
     let time = {
       days: 0,
       hours: 0,
@@ -233,20 +267,38 @@ const CardLarge1 = ({
     let intVal = 0;
     if (sysTime > 0) {
       curTime.current = sysTime;
-      calculateTimeLeft((consideringItem)?.auctionStarted, (consideringItem)?.auctionPeriod);
+      calculateTimeLeft(
+        consideringItem?.auctionStarted,
+        consideringItem?.auctionPeriod
+      );
       intVal = setInterval(() => {
-        const time_left = calculateTimeLeft((consideringItem)?.auctionStarted, (consideringItem)?.auctionPeriod)
+        const time_left = calculateTimeLeft(
+          consideringItem?.auctionStarted,
+          consideringItem?.auctionPeriod
+        );
         if (time_left <= 0) {
           curTime.current = 0;
           setAuctionEnded(true);
           clearInterval(intVal);
         }
-      }, 1000)
+      }, 1000);
     }
 
-    return () => clearInterval(intVal)
+    return () => clearInterval(intVal);
   }, [sysTime]);
 
+  const isVideoName = (fileName) => {
+    if (fileName && fileName.toString() !== "") {
+      if (
+        fileName.toString().includes("mp4") === true ||
+        fileName.toString().includes("MP4") === true
+      ) {
+        return true;
+      }
+    }
+    return false;
+  };
+  
   return (
     <div
       className={`nc-CardLarge1 nc-CardLarge1--hasAnimation relative flex flex-col-reverse lg:flex-row justify-end ${className}`}
@@ -254,37 +306,66 @@ const CardLarge1 = ({
       <div className="z-10 w-full lg:mt-0 sm:px-5 lg:px-0 lg:max-w-lg lg:m-auto">
         <div className="p-4 space-y-3 bg-white shadow-lg nc-CardLarge1__left sm:p-8 xl:py-14 md:px-10 bg-transparent rounded-3xl sm:space-y-8 ">
           <h2 className="text-2xl font-semibold lg:text-3xl 2xl:text-5xl ">
-            <div onClick={() => { navigate(`/nft-detail/${(consideringItem)?._id || ""}`) }} title="Walking On Air">
-              {(consideringItem)?.name || ""}
+            <div
+              onClick={() => {
+                navigate(`/nft-detail/${consideringItem?._id || ""}`);
+              }}
+              title="Walking On Air"
+            >              
+              {consideringItem?.name || ""}
             </div>
           </h2>
 
           <div className="flex flex-col space-y-3 sm:flex-row sm:space-y-0 sm:space-x-12">
-            <div className="flex items-center" onClick={() => navigate(`/page-author/${(consideringItem)?.creator?._id || ""}`)} >
+            <div
+              className="flex items-center"
+              onClick={() =>
+                navigate(`/page-author/${consideringItem?.creator?._id || ""}`)
+              }
+            >
               <div className="flex-shrink-0 w-10 h-10">
-                <Avatar sizeClass="w-10 h-10"
-                  imgUrl={(consideringItem)?.creator?.avatar ? `${config.API_URL}uploads/${(consideringItem)?.creator.avatar}` : undefined}
+                <Avatar
+                  sizeClass="w-10 h-10"
+                  imgUrl={
+                    consideringItem?.creator?.avatar
+                      ? `${config.API_URL}uploads/${consideringItem?.creator.avatar}`
+                      : undefined
+                  }
                 />
               </div>
               <div className="ml-3">
                 <div className="text-xs dark:text-neutral-400">Creator</div>
                 <div className="flex items-center text-sm font-semibold">
-                  <span>{(consideringItem)?.creator?.username || ""}</span>
+                  <span>{consideringItem?.creator?.username || ""}</span>
                   <VerifyIcon />
                 </div>
               </div>
             </div>
-            <div className="flex items-center" onClick={() => navigate(`/collectionItems/${(consideringItem)?.collection_id?._id || ""}`)}>
+            <div
+              className="flex items-center"
+              onClick={() =>
+                navigate(
+                  `/collectionItems/${
+                    consideringItem?.collection_id?._id || ""
+                  }`
+                )
+              }
+            >
               <div className="flex-shrink-0 w-10 h-10">
                 {
-                  <Avatar sizeClass="w-10 h-10"
-                    imgUrl={`${config.API_URL}uploads/${(consideringItem)?.collection_id?.logoURL || ""}`}
+                  <Avatar
+                    sizeClass="w-10 h-10"
+                    imgUrl={`${config.API_URL}uploads/${
+                      consideringItem?.collection_id?.logoURL || ""
+                    }`}
                   />
                 }
               </div>
               <div className="ml-3">
                 <div className="text-xs dark:text-neutral-400">Collection</div>
-                <div className="text-sm font-semibold ">{(consideringItem)?.collection_id?.name}</div>
+                <div className="text-sm font-semibold ">
+                  {consideringItem?.collection_id?.name}
+                </div>
               </div>
             </div>
           </div>
@@ -292,48 +373,53 @@ const CardLarge1 = ({
           <div className="pt-6">
             <div className="relative flex flex-col items-baseline p-6 border-2 border-green-500 sm:flex-row rounded-xl">
               <span className="block absolute bottom-full translate-y-1.5 py-1 px-1.5 bg-white dark:bg-[#191818] text-sm text-neutral-500 dark:text-neutral-400 ring ring-offset-0 ring-white dark:ring-neutral-900">
-                {
-                  (consideringItem)?.isSale == 2 ?
-                    (consideringItem)?.bids && (consideringItem).bids.length > 0 ?
-                      "Current Bid"
-                      :
-                      "Start price"
-                    :
-                    (consideringItem)?.isSale == 1 ?
-                      "Sale Price"
-                      :
-                      "Price"
-                }
+                {consideringItem?.isSale == 2
+                  ? consideringItem?.bids && consideringItem.bids.length > 0
+                    ? "Current Bid"
+                    : "Start price"
+                  : consideringItem?.isSale == 1
+                  ? "Sale Price"
+                  : "Price"}
               </span>
               <span className="text-3xl font-semibold text-green-500 xl:text-4xl">
-                {
-                  (consideringItem)?.isSale == 2 ?
-                    `${(consideringItem).bids && (consideringItem).bids.length > 0 ?
-                      (consideringItem).bids[(consideringItem).bids.length - 1].price ?
-                        (consideringItem).bids[(consideringItem).bids.length - 1].price : 0
-                      :
-                      (consideringItem)?.price} RIZE`
-                    :
-                    `${(consideringItem)?.price || 0} RIZE`
-                }
+                {consideringItem?.isSale == 2
+                  ? `${
+                      consideringItem.bids && consideringItem.bids.length > 0
+                        ? consideringItem.bids[consideringItem.bids.length - 1]
+                            .price
+                          ? consideringItem.bids[
+                              consideringItem.bids.length - 1
+                            ].price
+                          : 0
+                        : consideringItem?.price
+                    } USD`
+                  : `${consideringItem?.price || 0} USD`}
               </span>
               <span className="text-lg text-neutral-400 sm:ml-3.5">
-                {
-                  (consideringItem)?.isSale == 2 ?
-                    `( ≈ $ ${(consideringItem).bids && (consideringItem).bids.length > 0 ?
-                      (consideringItem).bids[(consideringItem).bids.length - 1].price ?
-                        ((consideringItem).bids[(consideringItem).bids.length - 1].price * globalCOREPrice)?.toFixed(2) : 0
-                      :
-                      ((consideringItem)?.price * globalCOREPrice)?.toFixed(2) || 0} )`
-                    :
-                    `( ≈ $ ${((consideringItem)?.price * globalCOREPrice)?.toFixed(2) || 0})`
-                }
+                {consideringItem?.isSale == 2
+                  ? `( ≈ $ ${
+                      consideringItem.bids && consideringItem.bids.length > 0
+                        ? consideringItem.bids[consideringItem.bids.length - 1]
+                            .price
+                          ? (
+                              consideringItem.bids[
+                                consideringItem.bids.length - 1
+                              ].price * globalCOREPrice
+                            )?.toFixed(2)
+                          : 0
+                        : (consideringItem?.price * globalCOREPrice)?.toFixed(
+                            2
+                          ) || 0
+                    } )`
+                  : `( ≈ $ ${
+                      (consideringItem?.price * globalCOREPrice)?.toFixed(2) ||
+                      0
+                    })`}
               </span>
             </div>
           </div>
 
-          {
-            (consideringItem)?.isSale === 2 &&
+          {consideringItem?.isSale === 2 && (
             <div className="space-y-5">
               <div className="flex items-center space-x-2 text-neutral-500 dark:text-neutral-400 ">
                 <svg
@@ -366,13 +452,17 @@ const CardLarge1 = ({
                     strokeLinejoin="round"
                   />
                 </svg>
-                <span className="mt-1 leading-none">{auctionEnded ? 'Auction period has expired' : 'Auction ending in:'} </span>
+                <span className="mt-1 leading-none">
+                  {auctionEnded
+                    ? "Auction period has expired"
+                    : "Auction ending in:"}{" "}
+                </span>
               </div>
               {!auctionEnded && (
                 <div className="flex space-x-5 sm:space-x-10">
                   <div className="flex flex-col items-center">
                     <span className="text-2xl font-semibold sm:text-3xl">
-                      {(timeLeft)?.days || 0}
+                      {timeLeft?.days || 0}
                     </span>
                     <span className="sm:text-lg text-neutral-500 dark:text-neutral-400">
                       Days
@@ -380,7 +470,7 @@ const CardLarge1 = ({
                   </div>
                   <div className="flex flex-col items-center">
                     <span className="text-2xl font-semibold sm:text-3xl">
-                      {(timeLeft)?.hours || 0}
+                      {timeLeft?.hours || 0}
                     </span>
                     <span className="sm:text-lg text-neutral-500 dark:text-neutral-400">
                       hours
@@ -388,7 +478,7 @@ const CardLarge1 = ({
                   </div>
                   <div className="flex flex-col items-center">
                     <span className="text-2xl font-semibold sm:text-3xl">
-                      {(timeLeft)?.minutes || 0}
+                      {timeLeft?.minutes || 0}
                     </span>
                     <span className="sm:text-lg text-neutral-500 dark:text-neutral-400">
                       mins
@@ -396,43 +486,52 @@ const CardLarge1 = ({
                   </div>
                   <div className="flex flex-col items-center">
                     <span className="text-2xl font-semibold sm:text-3xl">
-                      {(timeLeft)?.seconds || 0}
+                      {timeLeft?.seconds || 0}
                     </span>
                     <span className="sm:text-lg text-neutral-500">secs</span>
                   </div>
                 </div>
               )}
             </div>
-          }
+          )}
 
           <div className="w h-[1px] bg-neutral-100 dark:bg-neutral-700"></div>
 
           <div className="flex flex-col space-y-2 sm:flex-row sm:space-y-0 sm:space-x-3">
-            {
-              (consideringItem) && currentUsr && (consideringItem).isSale === 2 && (consideringItem).owner && (consideringItem).owner._id !== currentUsr._id ?
-                <ButtonPrimary
-                  onClick={() => setVisibleModalBid(true)}
-                >
-                  Place a bid
-                </ButtonPrimary> : <></>
-            }
-            {
-              (consideringItem) && currentUsr && (consideringItem).isSale === 2 && (consideringItem).owner && (consideringItem).owner._id === currentUsr._id ?
-                (consideringItem).bids.length > 0 ?
-                  <ButtonPrimary
-                    onClick={() => setVisibleModalAccept(true)}
-                  >
-                    Accept
-                  </ButtonPrimary>
-                  :
-                  <ButtonPrimary
-                    onClick={() => removeSale()}
-                  >
-                    Remove from sale
-                  </ButtonPrimary>
-                : <></>
-            }
-            <ButtonSecondary onClick={() => { navigate(`/nft-detail/${(consideringItem)?._id}`) }} className="flex-1">
+            {consideringItem &&
+            currentUsr &&
+            consideringItem.isSale === 2 &&
+            consideringItem.owner &&
+            consideringItem.owner._id !== currentUsr._id ? (
+              <ButtonPrimary onClick={() => setVisibleModalBid(true)}>
+                Place a bid
+              </ButtonPrimary>
+            ) : (
+              <></>
+            )}
+            {consideringItem &&
+            currentUsr &&
+            consideringItem.isSale === 2 &&
+            consideringItem.owner &&
+            consideringItem.owner._id === currentUsr._id ? (
+              consideringItem.bids.length > 0 ? (
+                <ButtonPrimary onClick={() => setVisibleModalAccept(true)}>
+                  Accept
+                </ButtonPrimary>
+              ) : (
+                <ButtonPrimary onClick={() => removeSale()}>
+                  Remove from sale
+                </ButtonPrimary>
+              )
+            ) : (
+              <></>
+            )}
+            <ButtonSecondary
+              onClick={() => {
+                navigate(`/nft-detail/${consideringItem?._id}`);
+              }}
+              className="flex-1"
+            >
               View item
             </ButtonSecondary>
           </div>
@@ -441,19 +540,48 @@ const CardLarge1 = ({
 
       <div className="w-full lg:w-[400px] xl:w-[500px] lg:m-auto relative ">
         <div className="nc-CardLarge1__right cursor-pointer">
-          <div onClick={() => { navigate(`/nft-detail/${(consideringItem)?._id || ""}`) }} >
+          <div
+            onClick={() => {
+              navigate(`/nft-detail/${consideringItem?._id || ""}`);
+            }}
+          >
+            { isVideoName(consideringItem?.logoURL || "") === false ?
             <NcImage
               containerClassName="aspect-w-1 aspect-h-1 relative"
               className="absolute inset-0 object-cover rounded-3xl sm:rounded-[40px] border-4 sm:border-[14px] border-white dark:border-neutral-800"
-              src={(consideringItem)?.logoURL ? `${config.API_URL}uploads/${(consideringItem)?.logoURL}` : ""}
+              src={
+                consideringItem.fileType === FILE_TYPE.IMAGE? 
+                consideringItem?.logoURL
+                  ? `${config.ipfsGateway}${consideringItem.logoURL}`
+                  : ""
+                  :
+                consideringItem?.logoURL
+                ? `${config.API_URL}uploads/${consideringItem.logoURL}`
+                : ""
+              }
               alt={"title"}
             />
+            :
+            <VideoForPreview
+              src={
+                consideringItem?.logoURL
+                  ? `${config.API_URL}uploads/${consideringItem?.logoURL || ""}`
+                  : ""
+              }
+              nftId={consideringItem?._id || ""}
+              className="aspect-w-1 aspect-h-1 relative  inset-0 object-cover rounded-3xl sm:rounded-[40px] border-4 sm:border-[14px] border-white dark:border-neutral-800"
+            />
+}
           </div>
-          {
-            isVideo((consideringItem)) === true &&
+          {isVideo(consideringItem) === true && (
             <ItemTypeVideoIcon className="absolute w-8 h-8 md:w-10 md:h-10 left-3 bottom-3 sm:left-7 sm:bottom-[140px] " />
-          }
-          <LikeButton liked={isLiked} count={(consideringItem)?.likes ? (consideringItem).likes.length : 0} toggleFav={toggleFav} className="absolute right-3 top-3 sm:right-7 sm:top-7" />
+          )}
+          <LikeButton
+            liked={isLiked}
+            count={consideringItem?.likes ? consideringItem.likes.length : 0}
+            toggleFav={toggleFav}
+            className="absolute right-3 top-3 sm:right-7 sm:top-7"
+          />
         </div>
         <div className="pt-4 sm:pt-8 sm:px-10 flex justify-center">
           <NextPrev
@@ -469,9 +597,13 @@ const CardLarge1 = ({
         onCloseModal={() => setVisibleModalBid(false)}
         contentExtraClass="max-w-lg"
         renderContent={() => (
-          <Bid nft={(consideringItem)} onOk={onBid} onCancel={() => setVisibleModalBid(false)} />
+          <Bid
+            nft={consideringItem}
+            onOk={onBid}
+            onCancel={() => setVisibleModalBid(false)}
+          />
         )}
-        renderTrigger={() => { }}
+        renderTrigger={() => {}}
         modalTitle="Place a Bid"
       />
 
@@ -480,20 +612,26 @@ const CardLarge1 = ({
         onCloseModal={() => setVisibleModalAccept(false)}
         contentExtraClass="max-w-lg"
         renderContent={() => (
-          <Accept onOk={onAccept} onCancel={() => { setVisibleModalAccept(false) }} nft={(consideringItem)} />
+          <Accept
+            onOk={onAccept}
+            onCancel={() => {
+              setVisibleModalAccept(false);
+            }}
+            nft={consideringItem}
+          />
         )}
-        renderTrigger={() => { }}
+        renderTrigger={() => {}}
         modalTitle="Accept Sale"
       />
 
-
-      {<Backdrop
-        sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
-        open={processing}
-      >
-        <CircularProgress color="inherit" />
-      </Backdrop>}
-
+      {
+        <Backdrop
+          sx={{ color: "#fff", zIndex: (theme) => theme.zIndex.drawer + 1 }}
+          open={processing}
+        >
+          <CircularProgress color="inherit" />
+        </Backdrop>
+      }
     </div>
   );
 };

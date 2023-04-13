@@ -6,7 +6,12 @@ import styles1 from "./ProfileEdit.module.sass";
 import styles2 from "./UploadDetails.module.sass";
 import { toast } from "react-toastify";
 import axios from "axios";
-import { config, CATEGORIES, PROPERTY_TYPES } from "app/config.js";
+import {
+  config,
+  CATEGORIES,
+  PROPERTY_TYPES,
+  PLATFORM_NETWORKS,
+} from "app/config.js";
 import Modal from "components/Modal";
 import TextInput from "../../components/TextInput";
 import Dropdown from "../../components/Dropdown";
@@ -18,8 +23,9 @@ import { useAppDispatch, useAppSelector } from "app/hooks";
 
 import ButtonPrimary from "shared/Button/ButtonPrimary";
 import {
-  selectCurrentChainId,
+  selectCurrentNetworkSymbol,
   selectCurrentUser,
+  selectIsCommunityMember,
 } from "app/reducers/auth.reducers";
 import { changeConsideringCollectionId } from "app/reducers/collection.reducers";
 import FormItem from "components/FormItem";
@@ -34,6 +40,7 @@ import { useNavigate } from "react-router-dom";
 import { Backdrop, CircularProgress } from "@mui/material";
 import { Helmet } from "react-helmet";
 import { useSigningClient } from "app/cosmwasm";
+import { isSupportedEVMNetwork } from "InteractWithSmartContract/interact";
 
 const ColorModeContext = React.createContext({ CollectionSelect: () => {} });
 
@@ -48,6 +55,7 @@ const CreateCollection = () => {
   const [bannerImg, setBannerImg] = useState("");
   const [textName, setTextName] = useState("");
   const [textDescription, setTextDescription] = useState("");
+  const [isRizeMemberCollection, setIsRizeMemberCollection] = useState(false);
   const [termsCondtions, setTermsConditions] = useState("");
   const [categories, setCategories] = useState(categoriesOptions[0]);
   const [floorPrice, setFloorPrice] = useState(0);
@@ -62,7 +70,8 @@ const CreateCollection = () => {
   const navigate = useNavigate();
 
   const currentUsr = useAppSelector(selectCurrentUser);
-  const currentChainId = useAppSelector(selectCurrentChainId);
+  const currentNetworkSymbol = useAppSelector(selectCurrentNetworkSymbol);
+  const isUserAMemberOfCommunity = useAppSelector(selectIsCommunityMember);
 
   useEffect(() => {
     if (localStorage.theme === undefined || localStorage.theme === null) {
@@ -105,7 +114,7 @@ const CreateCollection = () => {
       balances[config.COIN_MINIMAL_DENOM] <= 0 ||
       (tokenAmountShouldPay > 0 && balances.cw20 <= tokenAmountShouldPay)
     ) {
-      toast.warn("Insufficient TESTCORE or RIZE");
+      toast.warn("Insufficient TESTCORE or USD");
       return false;
     }
     return true;
@@ -149,67 +158,91 @@ const CreateCollection = () => {
         if (isCreatingNewItem)
           localStorage.setItem("newCollectionId", newCollectionId);
         dispatch(changeConsideringCollectionId(newCollectionId));
-        try {
-          let balanceCheck = await checkNativeCurrencyAndTokenBalances(0);
-          if (balanceCheck == false) {
-            axios({
-              method: "post",
-              url: `${config.API_URL}api/collection/delete`,
-              data: {
-                _id: newCollectionId,
-                owner: currentUsr._id || "",
-              },
-            })
-              .then((data) => {})
-              .catch((errror) => {});
-            return;
-          }
-          const cratedTx = await addCollection(
-            currentUsr.address,
-            10000,
-            textName,
-            "Rize2DayNFT",
-            config.CW721_CODE_ID,
-            100000,
-            [
-              {
-                address: currentUsr.address,
-                rate: 50000,
-              },
-              {
-                address: "testcore125y885enkegnqzsyxq4rgnswsqhqjrmgdratml",
-                // "address": "devcore18a97jc79x8mt5hxzchf6h039gn7vk43dwrjnt6",
-                rate: 10000,
-              },
-            ],
-            newCollectionId
-          );
-          if (cratedTx != -1) {
-            //read created collection info here
-            let newCollections = await getOwnedCollections(currentUsr.address);
-            if (newCollections?.list.length > 0) {
-              let newCollectionInfo =
-                newCollections.list[newCollections.list.length - 1];
+        if (isSupportedEVMNetwork(currentNetworkSymbol) === true) {
+          setWorking(false);
+          toast.success(<div>You 've created a new collection.</div>);
+          navigate("/collectionList");
+        }
+        if (currentNetworkSymbol === PLATFORM_NETWORKS.COREUM) {
+          try {
+            let balanceCheck = await checkNativeCurrencyAndTokenBalances(0);
+            if (balanceCheck == false) {
               axios({
-                method: "put",
-                url: `${config.API_URL}api/collection/${newCollectionId}`,
+                method: "post",
+                url: `${config.API_URL}api/collection/delete`,
                 data: {
-                  collectionNumber: newCollectionInfo.id,
-                  address: newCollectionInfo.collection_address,
-                  cw721address: newCollectionInfo.cw721_address,
+                  _id: newCollectionId,
+                  owner: currentUsr._id || "",
                 },
               })
-                .then((response) => {
-                  if (response.data.code == 0) {
-                    toast.success(<div>You 've created a new collection.</div>);
-                    navigate("/collectionList");
-                  }
-                })
-                .catch((error) => {});
+                .then((data) => {})
+                .catch((errror) => {});
+              return;
             }
-          } else {
-            toast.error("Transaction failed!");
-            axios({
+            const cratedTx = await addCollection(
+              currentUsr.address,
+              10000,
+              textName,
+              "Rize2DayNFT",
+              config.CW721_CODE_ID,
+              100000,
+              [
+                {
+                  address: currentUsr.address,
+                  rate: 50000,
+                },
+                {
+                  address: "testcore125y885enkegnqzsyxq4rgnswsqhqjrmgdratml",
+                  // "address": "devcore18a97jc79x8mt5hxzchf6h039gn7vk43dwrjnt6",
+                  rate: 10000,
+                },
+              ],
+              newCollectionId
+            );
+            if (cratedTx != -1) {
+              //read created collection info here
+              let newCollections = await getOwnedCollections(
+                currentUsr.address
+              );
+              if (newCollections?.list.length > 0) {
+                let newCollectionInfo =
+                  newCollections.list[newCollections.list.length - 1];
+                axios({
+                  method: "put",
+                  url: `${config.API_URL}api/collection/${newCollectionId}`,
+                  data: {
+                    collectionNumber: newCollectionInfo.id,
+                    address: newCollectionInfo.collection_address,
+                    cw721address: newCollectionInfo.cw721_address,
+                  },
+                })
+                  .then((response) => {
+                    if (response.data.code == 0) {
+                      toast.success(
+                        <div>You 've created a new collection.</div>
+                      );
+                      navigate("/collectionList");
+                    }
+                  })
+                  .catch((error) => {});
+              }
+            } else {
+              toast.error("Transaction failed!");
+              axios({
+                method: "post",
+                url: `${config.API_URL}api/collection/delete`,
+                data: {
+                  _id: newCollectionId,
+                  owner: currentUsr._id || "",
+                },
+              })
+                .then((data) => {})
+                .catch((errror) => {});
+            }
+          } catch (error) {
+            toast.error(error.message);
+            //delete collection data using newCollectionId and ownner
+            await axios({
               method: "post",
               url: `${config.API_URL}api/collection/delete`,
               data: {
@@ -220,19 +253,6 @@ const CreateCollection = () => {
               .then((data) => {})
               .catch((errror) => {});
           }
-        } catch (error) {
-          toast.error(error.message);
-          //delete collection data using newCollectionId and ownner
-          await axios({
-            method: "post",
-            url: `${config.API_URL}api/collection/delete`,
-            data: {
-              _id: newCollectionId,
-              owner: currentUsr._id || "",
-            },
-          })
-            .then((data) => {})
-            .catch((errror) => {});
         }
       })
       .catch(function (error) {
@@ -313,6 +333,9 @@ const CreateCollection = () => {
         params.price = floorPrice;
         params.owner = currentUsr._id;
         params.metaData = metaFields;
+        params.networkSymbol = currentNetworkSymbol;
+        params.creatorWallet = currentUsr.address;
+        params.wantTobeMemberColl = isRizeMemberCollection;
         saveCollection(params);
       })
       .catch(function (error) {
@@ -417,6 +440,7 @@ const CreateCollection = () => {
                 borderRadius: "50%",
                 width: "160px",
                 height: "160px",
+                objectFit: "fill",
               }}
             >
               <div id="preSelectSentence" style={{ position: "absolute" }}>
@@ -427,6 +451,7 @@ const CreateCollection = () => {
               <input
                 className={styles1.load}
                 type="file"
+                accept=".png,.jpeg,.jpg,.gif,.webp"
                 onChange={changeAvatar}
               />
               <div className={styles1.avatar}>
@@ -466,6 +491,7 @@ const CreateCollection = () => {
             <input
               className={styles2.load}
               type="file"
+              accept=".png,.jpeg,.jpg,.gif,.webp"
               onChange={changeBanner}
             />
             <div>
@@ -494,7 +520,7 @@ const CreateCollection = () => {
                   }}
                 />
               </FormItem>
-              <FormItem label="FLOOR PRICE">
+              <FormItem label="Sell PRICE">
                 <Input
                   placeholder="Enter the floor price"
                   value={floorPrice}
@@ -514,12 +540,23 @@ const CreateCollection = () => {
                   options={categoriesOptions}
                 />
               </FormItem>
+              {isUserAMemberOfCommunity === true && (
+                <div className="flexl mt-5">
+                  <Checkbox
+                    value={isRizeMemberCollection}
+                    onChange={(e, checked) => {
+                      setIsRizeMemberCollection(checked);
+                    }}
+                  />
+                  <Label>Rize Member Collection</Label>
+                </div>
+              )}
             </div>
             <div className="flex flex-col h-full">
               <Label>Description</Label>
               <Textarea
                 className="mt-1.5 h-full"
-                placeholder="Enter collection description over here"
+                placeholder="Enter collection description"
                 value={textDescription}
                 onChange={(event) => {
                   setTextDescription(event.target.value);
@@ -531,7 +568,7 @@ const CreateCollection = () => {
             <Label>Add custom terms and conditions</Label>
             <Textarea
               className="mt-1.5 h-full"
-              placeholder="Enter custon terms and conditions over here"
+              placeholder="Enter custom terms and conditions"
               value={termsCondtions}
               onChange={(event) => {
                 setTermsConditions(event.target.value);

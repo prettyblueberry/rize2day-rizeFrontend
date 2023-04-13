@@ -13,8 +13,11 @@ import axios from "axios";
 import CardFlip from "react-card-flip";
 import { NFT_EFFECT } from "./EffectListBox";
 import TileEffect from "./TileEffect/TileEffect";
-import { selectCurrentUser } from "app/reducers/auth.reducers";
-import { config } from "app/config";
+import {
+  selectCurrentNetworkSymbol,
+  selectCurrentUser,
+} from "app/reducers/auth.reducers";
+import { ACTIVE_CHAINS, config, PLATFORM_NETWORKS } from "app/config";
 import { isEmpty } from "app/methods";
 import { useNavigate } from "react-router-dom";
 import { AiOutlineMessage } from "react-icons/ai";
@@ -24,14 +27,18 @@ import defaultAvatar from "images/default_avatar.png";
 import { ClockIcon } from "@heroicons/react/outline";
 import { getSystemTime } from "utils/utils";
 import Clock from "./Clock/Clock";
+import NetworkLogo from "./NetworkLogo";
+import { isSupportedEVMNetwork } from "InteractWithSmartContract/interact";
+import VideoForPreview from "./VideoForPreview";
 
 const CardNFT3D = (props: any) => {
+  const currentUsr = useAppSelector(selectCurrentUser);
+  const currentNetworkSymbol = useAppSelector(selectCurrentNetworkSymbol);
   const [DEMO_NFT_ID] = React.useState(nanoid());
 
   const [nftItem, setNftItem] = useState(props?.item || {});
   const [hideFav, setHideFav] = useState(props?.hideHeart || false);
   const navigate = useNavigate();
-  const currentUsr = useAppSelector(selectCurrentUser);
   const [isLiked, setIsLiked] = useState(false);
   const [isFlipped, setFlipped] = useState(false);
   const [auctionEnded, setAuctionEnded] = useState(false);
@@ -74,14 +81,13 @@ const CardNFT3D = (props: any) => {
             setNftItem(result.data.data);
             checkIsLiked();
           })
-          .catch(() => { });
+          .catch(() => {});
       });
   };
 
   const toggleFav = () => {
     setFavItem(nftItem._id, currentUsr?._id || "");
   };
-
 
   const checkIsLiked = () => {
     if (nftItem && currentUsr) {
@@ -116,8 +122,8 @@ const CardNFT3D = (props: any) => {
           },
         }
       )
-      .then((result) => { })
-      .catch(() => { });
+      .then((result) => {})
+      .catch(() => {});
   };
 
   const addToPlayList = async () => {
@@ -181,10 +187,11 @@ const CardNFT3D = (props: any) => {
   const renderListenButtonDefault = (state?: "playing" | "loading") => {
     return (
       <div
-        className={`w-14 h-14 flex items-center justify-center rounded-full  cursor-pointer ${state === "playing"
-          ? "bg-neutral-900/40 text-primary-50"
-          : "bg-neutral-50/80 text-primary-500"
-          }`}
+        className={`w-14 h-14 flex items-center justify-center rounded-full  cursor-pointer ${
+          state === "playing"
+            ? "bg-neutral-900/40 text-primary-50"
+            : "bg-neutral-50/80 text-primary-500"
+        }`}
       >
         {renderIcon(state)}
       </div>
@@ -200,9 +207,23 @@ const CardNFT3D = (props: any) => {
     }
   };
 
+  const isVideo = (fileName) => {
+    if (fileName && fileName.toString() !== "") {
+      if (
+        fileName.toString().includes("mp4") === true ||
+        fileName.toString().includes("MP4") === true
+      ) {
+        return true;
+      }
+    }
+    return false;
+  };
+
   const renderView = () => (
     <div
-      className={`nc-CardNFTMusic z-10 w-full m-auto relative flex flex-col group [ nc-box-has-hover nc-dark-box-bg-has-hover ] ${props?.className}`}
+      className={`nc-CardNFTMusic z-10 w-full m-auto relative flex flex-col group [ nc-box-has-hover nc-dark-box-bg-has-hover ] ${
+        props?.isHome ? "!border-[#22c55e]" : ""
+      } ${props?.className}`}
       data-nc-id="CardNFT3D"
     >
       <div className="relative flex-shrink-0 ">
@@ -211,6 +232,7 @@ const CardNFT3D = (props: any) => {
             nftItem?.musicURL
               ? `${config.ipfsGateway}${nftItem.musicURL}`
               : undefined
+            // "https://crystaltest.b-cdn.net/D3_files/man.glb"
           }
           nftId={nftItem?._id || DEMO_NFT_ID}
         />
@@ -223,15 +245,27 @@ const CardNFT3D = (props: any) => {
               : navigate("/nft-detail");
           }}
         >
-          <NcImage
-            containerClassName="block aspect-w-12 aspect-h-10 w-full h-0 rounded-3xl overflow-hidden z-0"
-            src={
-              nftItem?.logoURL
-                ? `${config.API_URL}uploads/${nftItem?.logoURL}`
-                : props?.featuredImage
-            }
-            className="object-cover w-full h-full group-hover:scale-[1.03] transition-transform duration-300 ease-in-out cursor-pointer will-change-transform"
-          />
+          {isVideo(nftItem?.logoURL) === false ? (
+            <NcImage
+              containerClassName="block aspect-w-12 aspect-h-10 w-full h-0 rounded-3xl overflow-hidden z-0"
+              src={
+                nftItem?.logoURL
+                  ? `${config.API_URL}uploads/${nftItem?.logoURL}`
+                  : props?.featuredImage
+              }
+              className="object-cover w-full h-full group-hover:scale-[1.03] transition-transform duration-300 ease-in-out cursor-pointer will-change-transform"
+            />
+          ) : (
+            <VideoForPreview
+              src={
+                nftItem?.logoURL
+                  ? `${config.API_URL}uploads/${nftItem?.logoURL || ""}`
+                  : ""
+              }
+              nftId={nftItem?._id || DEMO_NFT_ID}
+              className="block aspect-w-12 aspect-h-10 w-full h-0 rounded-3xl overflow-hidden z-0"
+            />
+          )}
         </div>
         <ItemType3DIcon className="absolute top-3 left-3 z-10 w-8 md:w-10 !h-9 text-white" />
         <div className="flex flex-row absolute top-3 right-3 z-10 !h-10 bg-black/50 px-3.5 items-center justify-center rounded-full text-white">
@@ -276,79 +310,80 @@ const CardNFT3D = (props: any) => {
                 : navigate("/nft-detail");
             }}
           >
-            {(nftItem as any)?.name || ""}
+            {((nftItem as any)?.name || "").toString().length > 15
+              ? ((nftItem as any)?.name || "").toString().substring(0, 15) +
+                "..."
+              : ((nftItem as any)?.name || "").toString()}
           </h2>
-          <div>
-            {!isEmpty((nftItem as any).owner) && (
-              <div
-                onClick={() =>
-                  navigate(
-                    `/page-author/${(nftItem as any)?.owner?._id || "1"}`
-                  )
-                }
-              >
-                <Avatar
-                  imgUrl={
-                    (nftItem as any)?.owner?.avatar
-                      ? `${config.API_URL}uploads/${(nftItem as any)?.owner.avatar
-                      }`
-                      : defaultAvatar
+          <div className="flex justify-between gap-2">
+            <div>
+              {!isEmpty((nftItem as any).owner) && (
+                <div
+                  onClick={() =>
+                    navigate(
+                      `/page-author/${(nftItem as any)?.owner?._id || "1"}`
+                    )
                   }
-                  sizeClass="w-8 h-8 sm:w-8 sm:h-8"
-                />
+                >
+                  <Avatar
+                    imgUrl={
+                      (nftItem as any)?.owner?.avatar
+                        ? `${config.API_URL}uploads/${
+                            (nftItem as any)?.owner.avatar
+                          }`
+                        : defaultAvatar
+                    }
+                    sizeClass="w-8 h-8 sm:w-8 sm:h-8"
+                  />
+                </div>
+              )}
+            </div>
+            {/* <span className="text-neutral-700 dark:text-neutral-400 text-xs">
+                {(nftItem as any)?.stockAmount ? (nftItem as any).stockAmount : 1} in stock
+              </span> */}
+
+            <NetworkLogo
+              networkSymbol={
+                (nftItem as any)?.networkSymbol || PLATFORM_NETWORKS.COREUM
+              }
+              className=""
+            />
+          </div>
+        </div>
+        {!props?.isHome && (
+          <div className="w-2d4 w-full border-b border-neutral-100 dark:border-neutral-600"></div>
+        )}
+        {!props?.isHome && (
+          <div className="flex justify-between items-end mt-3.5">
+            <Prices
+              labelTextClassName="bg-white dark:bg-[#191818] dark:group-hover:bg-[#202020] group-hover:bg-neutral-50"
+              labelText={
+                (nftItem as any)?.isSale == 2
+                  ? (nftItem as any)?.bids && (nftItem as any).bids.length > 0
+                    ? "Current Bid"
+                    : "Start price"
+                  : (nftItem as any)?.isSale == 1
+                  ? "Sale Price"
+                  : "Price"
+              }
+              item={nftItem}
+            />
+            {(nftItem as any)?.isSale == 2 && (
+              <div className="flex items-center text-sm text-neutral-500 dark:text-neutral-400">
+                <ClockIcon className="w-4 h-4" />
+                {auctionEnded ? (
+                  <span className="ml-1 mt-0.5">Expried</span>
+                ) : (
+                  <Clock
+                    nftItem={nftItem}
+                    sysTime={sysTime}
+                    setAuctionEnded={() => setAuctionEnded(true)}
+                  />
+                )}
               </div>
             )}
           </div>
-          {/* <span className="text-neutral-700 dark:text-neutral-400 text-xs">
-                {(nftItem as any)?.stockAmount ? (nftItem as any).stockAmount : 1} in stock
-              </span> */}
-        </div>
-        <div className="w-2d4 w-full border-b border-neutral-100 dark:border-neutral-600"></div>
-
-        <div className="flex justify-between items-end mt-3.5">
-          <Prices
-            labelTextClassName="bg-white dark:bg-[#191818] dark:group-hover:bg-[#202020] group-hover:bg-neutral-50"
-            labelText={
-              (nftItem as any)?.isSale == 2
-                ? (nftItem as any)?.bids && (nftItem as any).bids.length > 0
-                  ? "Current Bid"
-                  : "Start price"
-                : (nftItem as any)?.isSale == 1
-                  ? "Sale Price"
-                  : "Price"
-            }
-            price={
-              (nftItem as any)?.isSale == 2
-                ? `${(nftItem as any)?.bids && (nftItem as any)?.bids.length > 0
-                  ? (nftItem as any)?.bids[
-                    (nftItem as any)?.bids.length - 1
-                  ].price
-                    ? (nftItem as any)?.bids[
-                      (nftItem as any)?.bids.length - 1
-                    ].price
-                    : 0
-                  : (nftItem as any)?.price
-                } 
-                  RIZE 
-                  `
-                : (nftItem as any)?.isSale == 1
-                  ? `${(nftItem as any)?.price || 0} 
-                    RIZE
-                  `
-                  : "Not Listed"
-            }
-          />
-          {(nftItem as any)?.isSale == 2 && (
-            <div className="flex items-center text-sm text-neutral-500 dark:text-neutral-400">
-              <ClockIcon className="w-4 h-4" />
-              {auctionEnded ? (
-                <span className="ml-1 mt-0.5">Expried</span>
-              ) : (
-                <Clock nftItem={nftItem} sysTime={sysTime} setAuctionEnded={() => setAuctionEnded(true)} />
-              )}
-            </div>
-          )}
-        </div>
+        )}
       </div>
     </div>
   );
@@ -383,8 +418,9 @@ const CardNFT3D = (props: any) => {
                   <span>Collection:</span>
                   <div className="flex flex-row gap-4 items-center">
                     <Avatar
-                      imgUrl={`${config.API_URL}uploads/${(nftItem as any)?.collection_id?.logoURL
-                        }`}
+                      imgUrl={`${config.API_URL}uploads/${
+                        (nftItem as any)?.collection_id?.logoURL
+                      }`}
                       sizeClass="w-8 h-8 sm:w-9 sm:h-9"
                     />
                     <span>{(nftItem as any)?.collection_id?.name}</span>
@@ -394,8 +430,9 @@ const CardNFT3D = (props: any) => {
                   <span>Owner:</span>
                   <div className="flex flex-row gap-4 items-center">
                     <Avatar
-                      imgUrl={`${config.API_URL}uploads/${(nftItem as any)?.owner?.avatar
-                        }`}
+                      imgUrl={`${config.API_URL}uploads/${
+                        (nftItem as any)?.owner?.avatar
+                      }`}
                       sizeClass="w-8 h-8 sm:w-9 sm:h-9"
                     />
                     <span>{(nftItem as any)?.owner?.username}</span>
@@ -405,8 +442,9 @@ const CardNFT3D = (props: any) => {
                   <span>Creator:</span>
                   <div className="flex flex-row gap-4 items-center">
                     <Avatar
-                      imgUrl={`${config.API_URL}uploads/${(nftItem as any)?.creator?.avatar
-                        }`}
+                      imgUrl={`${config.API_URL}uploads/${
+                        (nftItem as any)?.creator?.avatar
+                      }`}
                       sizeClass="w-8 h-8 sm:w-9 sm:h-9"
                     />
                     <span>{(nftItem as any)?.creator?.username}</span>

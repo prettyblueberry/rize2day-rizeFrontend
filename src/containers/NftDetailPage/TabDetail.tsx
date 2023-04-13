@@ -1,13 +1,16 @@
-import {useState, useEffect} from "react";
+import { useState, useEffect } from "react";
 import { Tab } from "@headlessui/react";
 // import { personNames } from "contains/fakeData";
 import Avatar from "shared/Avatar/Avatar";
 import VerifyIcon from "components/VerifyIcon";
 import { useNavigate } from "react-router-dom";
 import { config } from "app/config";
+import { getItemPriceUnitText } from "./ItemPriceUnitText";
+import { useAppSelector } from "app/hooks";
+import { selectCurrentNetworkSymbol } from "app/reducers/auth.reducers";
 
-const TabDetail = (props:any) => {
-
+const TabDetail = (props: any) => {
+  const currentNetworkSymbol = useAppSelector(selectCurrentNetworkSymbol);
   const [consideringNFT, setConsideringNFT] = useState({});
   const [ownHistory, setOwnHistory] = useState([]);
   const [bids, setBids] = useState([]);
@@ -17,41 +20,52 @@ const TabDetail = (props:any) => {
 
   useEffect(() => {
     setConsideringNFT(props?.nft);
-    
+
     setBids(props?.nft?.bids);
     setOwnHistory(props?.ownHistory || []);
-  }, [props])
+  }, [props]);
 
   const renderTabBidHistory = () => {
     return (
       <ul className="divide-y divide-neutral-100 dark:divide-neutral-700">
-        {
-          (bids as any)?.length>0 && (bids as any).map((item:any, index:number) => (
-          <li
-            key={index}
-            className={`relative py-4 ${
-              index % 2 === 1 ? "bg-neutradl-100" : ""
-            }`}
-          >
-            <div className="flex items-center" onClick={() => navigate(`/page-author/${item?.user_id?._id || ""}`)}>
-              <Avatar sizeClass="h-10 w-10" radius="rounded-full" 
-                imgUrl={item?.user_id?.avatar? `${config.API_URL}uploads/${item.user_id.avatar}` : "" }
-              />
-              <span className="flex flex-col ml-4 text-neutral-500 dark:text-neutral-400">
-                <span className="flex items-center text-sm">
-                  <span className="">
-                    { `${item?.price || 0} 
-                    RIZE by ` }
+        {(bids as any)?.length > 0 &&
+          (bids as any).map((item: any, index: number) => (
+            <li
+              key={index}
+              className={`relative py-4 ${
+                index % 2 === 1 ? "bg-neutradl-100" : ""
+              }`}
+            >
+              <div
+                className="flex items-center"
+                onClick={() =>
+                  navigate(`/page-author/${item?.user_id?._id || ""}`)
+                }
+              >
+                <Avatar
+                  sizeClass="h-10 w-10"
+                  radius="rounded-full"
+                  imgUrl={
+                    item?.user_id?.avatar
+                      ? `${config.API_URL}uploads/${item.user_id.avatar}`
+                      : ""
+                  }
+                />
+                <span className="flex flex-col ml-4 text-neutral-500 dark:text-neutral-400">
+                  <span className="flex items-center text-sm">
+                    <span className="">
+                      {`${item?.price || 0} 
+                    ${getItemPriceUnitText(item, currentNetworkSymbol)} by `}
+                    </span>
+                    <span className="ml-1 font-medium text-neutral-900 dark:text-neutral-200">
+                      {item?.user_id?.username || ""}
+                    </span>
                   </span>
-                  <span className="ml-1 font-medium text-neutral-900 dark:text-neutral-200">
-                    {item?.user_id?.username || ""}
-                  </span>
+                  <span className="mt-1 text-xs">{item?.createdAt || ""}</span>
                 </span>
-                <span className="mt-1 text-xs">{item?.createdAt || ""}</span>
-              </span>
-            </div>
-          </li>
-        ))}
+              </div>
+            </li>
+          ))}
       </ul>
     );
   };
@@ -59,44 +73,66 @@ const TabDetail = (props:any) => {
   const renderTabProvenance = () => {
     return (
       <ul className="divide-y divide-neutral-100 dark:divide-neutral-700">
-        {
-          (ownHistory as any)?.length>0 && (ownHistory as any).map((item:any, index:number) => (
-          <li
-            key={index}
-            className={`relative py-4 ${
-              index % 2 === 1 ? "bg-neutradl-100" : ""
-            }`}
-          >
-            <div className="flex items-center" onClick={() => navigate(`/page-author/${item?.owner?._id || ""}`)} >
-              <Avatar sizeClass="h-10 w-10" radius="rounded-full" 
-                imgUrl={item?.owner?.avatar? `${config.API_URL}uploads/${item.owner.avatar}` : "" }
-              />
-              <span className="flex flex-col ml-4 text-neutral-500 dark:text-neutral-400">
-                <span className="flex items-center text-sm">
-                  <span className="">
-                    "Owned by"
-                  </span>
+        {(ownHistory as any)?.length > 0 &&
+          (ownHistory as any).map((item: any, index: number) => (
+            <li
+              key={index}
+              className={`relative py-4 ${
+                index % 2 === 1 ? "bg-neutradl-100" : ""
+              }`}
+            >
+              <div
+                className="flex items-center"
+                onClick={() =>
+                  navigate(`/page-author/${item?.owner?._id || ""}`)
+                }
+              >
+                <Avatar
+                  sizeClass="h-10 w-10"
+                  radius="rounded-full"
+                  imgUrl={
+                    item?.owner?.avatar
+                      ? `${config.API_URL}uploads/${item.owner.avatar}`
+                      : ""
+                  }
+                />
+                <span className="flex flex-col ml-4 text-neutral-500 dark:text-neutral-400">
+                  <span className="flex items-center text-sm">
+                    <span className="">"Owned by"</span>
 
-                  <span className="ml-1 font-medium text-neutral-900 dark:text-neutral-200">
-                    {item?.owner?.username || ""}
+                    <span className="ml-1 font-medium text-neutral-900 dark:text-neutral-200">
+                      {item?.owner?.username || ""}
+                    </span>
                   </span>
+                  <span className="mt-1 text-xs">{item?.createdAt || ""}</span>
                 </span>
-                <span className="mt-1 text-xs">{item?.createdAt || ""}</span>
-              </span>
-            </div>
+              </div>
 
-            <span className="absolute inset-0 rounded-md focus:z-10 focus:outline-none focus:ring-2 ring-blue-400"></span>
-          </li>
-        ))}
+              <span className="absolute inset-0 rounded-md focus:z-10 focus:outline-none focus:ring-2 ring-blue-400"></span>
+            </li>
+          ))}
       </ul>
     );
   };
 
   const renderTabOwner = () => {
     return (
-      <div className="flex items-center py-4" onClick={() => navigate(`/page-author/${(consideringNFT as any)?.owner?._id || ""}`)} >
-        <Avatar sizeClass="h-11 w-11" radius="rounded-full" 
-          imgUrl={(consideringNFT as any)?.owner?.avatar? `${config.API_URL}uploads/${(consideringNFT as any).owner.avatar}` : "" }
+      <div
+        className="flex items-center py-4"
+        onClick={() =>
+          navigate(`/page-author/${(consideringNFT as any)?.owner?._id || ""}`)
+        }
+      >
+        <Avatar
+          sizeClass="h-11 w-11"
+          radius="rounded-full"
+          imgUrl={
+            (consideringNFT as any)?.owner?.avatar
+              ? `${config.API_URL}uploads/${
+                  (consideringNFT as any).owner.avatar
+                }`
+              : ""
+          }
         />
         <span className="ml-2.5 text-neutral-500 dark:text-neutral-400 flex flex-col">
           <span className="text-sm">Owner</span>
