@@ -7,8 +7,8 @@ const SectionMainSlider = () => {
   const navigate = useNavigate();
   return (
     <>
-      <div className="relative flex flex-col items-center justify-center mt-5 mb-10">
-        <p className="text-5xl font-semibold mb-4 text-neutral-900 dark:text-white">Rize Limited NFTs</p>
+      <div className="relative flex flex-col items-center justify-center mt-1 mb-6">
+        <p className="text-5xl font-semibold mb-4 text-neutral-900 dark:text-white">Rize Member NFTs</p>
         <p className="text-base w-1/2 text-center mb-6 text-neutral-900 dark:text-white">A limited collection of 100 Stelliforms; 3D meditative sculptures that contain unique
           form, movement, and material compositions. Fully interoperable and XR ready.</p>
         <ButtonPrimary onClick={() => navigate('page-search')}>VIEW ALL NFTS</ButtonPrimary>

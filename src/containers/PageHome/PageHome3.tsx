@@ -1,11 +1,10 @@
 import React from "react";
 import clsx from "clsx";
-import SectionHowItWork from "components/SectionHowItWork/SectionHowItWork";
 import BackgroundSection from "components/BackgroundSection/BackgroundSection";
 import SectionGridAuthorBox from "components/SectionGridAuthorBox/SectionGridAuthorBox";
-// import SectionBecomeAnAuthor from "components/SectionBecomeAnAuthor/SectionBecomeAnAuthor";
 import SectionMainSlider from "components/SectionMainSlider/SectionMainSlider";
 import SectionMainHeader from "components/SectionMainHeader/SectionMainHeader";
+import SectionSliderNFTs from "components/SectionSliderNFTs";
 import SectionSliderCollections2 from "components/SectionSliderCollections2";
 import SectionSliderCategories from "components/SectionSliderCategories/SectionSliderCategories";
 import SectionLargeSlider from "./SectionLargeSlider";
@@ -29,16 +28,9 @@ function PageHome3() {
           <div className="relative py-10 lg:py-12">
             <div className="container">
               <BackgroundSection />
-              <SectionHowItWork />
+              <SectionSliderNFTs />
             </div>
           </div>
-          {/* <div className="relative py-10 lg:py-12">
-            <div className="container">
-              <BackgroundSection />
-              <SectionBecomeAnAuthor />
-              <SectionHowItWork />
-            </div>
-          </div> */}
 
           <div className="relative">
             <div className={clsx("absolute bg-[#33FF00] opacity-30 blur-[100px] w-[300px] h-[300px] rounded-full bottom-0 -right-[120px]")}></div>

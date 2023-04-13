@@ -79,7 +79,7 @@ const CardAuthorBox4: FC<CardAuthorBox4Props> = ({
             <span className={`block mt-0.5 text-sm `}>
               <span className="font-medium">12.321</span>
               <span className={`ml-1.5 text-neutral-500 dark:text-neutral-400`}>
-                RIZE
+                USD
               </span>
             </span>
           </div>

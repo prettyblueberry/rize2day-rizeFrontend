@@ -2,7 +2,7 @@ import { FC, useEffect, useState } from "react";
 import NcDropDown, { NcDropDownItem } from "shared/NcDropDown/NcDropDown";
 import { useAppDispatch, useAppSelector } from "app/hooks";
 import {
-  selectCurrentChainId,
+  selectCurrentNetworkSymbol,
   selectCurrentUser,
   selectCurrentWallet,
   selectGlobalProvider,
@@ -15,7 +15,8 @@ import {
 } from "app/reducers/nft.reducers";
 import { toast } from "react-toastify";
 import { isEmpty } from "app/methods";
-import { config } from "app/config";
+import Web3 from "web3";
+import { ACTIVE_CHAINS, config, PLATFORM_NETWORKS } from "app/config";
 import Modal from "./Modal";
 import Transfer from "containers/NftDetailPage/Transfer";
 import RemoveSale from "containers/NftDetailPage/RemoveSale";
@@ -30,6 +31,14 @@ import ChangePrice from "containers/NftDetailPage/ChangePrice";
 import axios from "axios";
 import { useNavigate, useParams } from "react-router-dom";
 import { useSigningClient } from "app/cosmwasm";
+import {
+  changePrice,
+  destroySale,
+  burnEVMNFT,
+  getBalanceOf,
+  isSupportedEVMNetwork,
+  transferEVMNFT,
+} from "InteractWithSmartContract/interact";
 
 export interface NftMoreDropdownProps {
   containerClassName?: string;
@@ -41,8 +50,6 @@ export interface NftMoreDropdownProps {
 const actionsDefault: NftMoreDropdownProps["actions"] = [
   { id: "edit", name: "Change price", icon: "las la-dollar-sign" },
   { id: "transferToken", name: "Transfer token", icon: "las la-sync" },
-  // { id: "Delete", name: "Delete from website", icon:"las la-trash-alt" },
-  // { id: "Unlist", name: "Remove from sale", icon: "las la-flag" },
   { id: "burn", name: "Burn item", icon: "las la-trash-alt" },
 ];
 
@@ -52,19 +59,17 @@ const NftMoreDropdown: FC<NftMoreDropdownProps> = ({
   dropdownPositon = "down",
   actions = actionsDefault,
 }) => {
-  const [isEditting, setIsEditting] = useState(false);
-  const [isBurning, setIsBurning] = useState(false);
-  const [isDeleting, setIsDeleting] = useState(false);
-  const [isUnlisting, setIsUnlisting] = useState(false);
-  const [isTransfering, setIsTransfering] = useState(false);
-  const [processing, setProcessing] = useState(false);
-  const globalProvider = useAppSelector(selectGlobalProvider);
-  const { tokenId } = useParams();
   const globalDetailNFT = useAppSelector(selectDetailOfAnItem);
   const currentUsr = useAppSelector(selectCurrentUser);
   const walletStatus = useAppSelector(selectWalletStatus);
   const globalAccount = useAppSelector(selectCurrentWallet);
-  const globalChainId = useAppSelector(selectCurrentChainId);
+  const currentNetworkSymbol = useAppSelector(selectCurrentNetworkSymbol);
+
+  const [isEditting, setIsEditting] = useState(false);
+  const [isBurning, setIsBurning] = useState(false);
+  const [isTransfering, setIsTransfering] = useState(false);
+  const [processing, setProcessing] = useState(false);
+  const globalProvider = useAppSelector(selectGlobalProvider);
   const { updateNFT, transferNFT, burnNFT, balances }: any = useSigningClient();
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
@@ -74,7 +79,7 @@ const NftMoreDropdown: FC<NftMoreDropdownProps> = ({
       balances[config.COIN_MINIMAL_DENOM] <= 0 ||
       (tokenAmountShouldPay > 0 && balances.cw20 <= tokenAmountShouldPay)
     ) {
-      toast.warn("Insufficient TESTCORE or RIZE");
+      toast.warn("Insufficient TESTCORE or USD");
       return false;
     }
     return true;
@@ -85,12 +90,6 @@ const NftMoreDropdown: FC<NftMoreDropdownProps> = ({
 
   const openModalBurn = () => setIsBurning(true);
   const closeModalBurn = () => setIsBurning(false);
-
-  const openModalDelete = () => setIsBurning(true);
-  const closeModalDelete = () => setIsBurning(false);
-
-  const openModalRemove = () => setIsUnlisting(true);
-  const closeModalRemove = () => setIsUnlisting(false);
 
   const openModalTransferToken = () => setIsTransfering(true);
   const closeModalTransferToken = () => setIsTransfering(false);
@@ -103,12 +102,6 @@ const NftMoreDropdown: FC<NftMoreDropdownProps> = ({
     if (item.id === "edit") {
       return openModalEdit();
     }
-    if (item.id === "Delete") {
-      return openModalDelete();
-    }
-    if (item.id === "Unlist") {
-      return openModalRemove();
-    }
     if (item.id === "burn") {
       return openModalBurn();
     }
@@ -119,6 +112,19 @@ const NftMoreDropdown: FC<NftMoreDropdownProps> = ({
   };
 
   const checkWalletAddrAndChainId = async () => {
+    if (
+      currentNetworkSymbol !==
+      (globalDetailNFT?.networkSymbol || PLATFORM_NETWORKS.COREUM)
+    ) {
+      toast.warn(
+        `Please connect your wallet to ${
+          ACTIVE_CHAINS[
+            globalDetailNFT?.networkSymbol || PLATFORM_NETWORKS.COREUM
+          ]?.name || ""
+        } and try again.`
+      );
+      return false;
+    }
     if (isEmpty(currentUsr) === true) {
       toast.warn("You have to sign in before doing a trading.");
       return false;
@@ -194,27 +200,50 @@ const NftMoreDropdown: FC<NftMoreDropdownProps> = ({
       return;
     }
 
-    setProcessing(true);
-    let iHaveit;
-    try {
-      iHaveit = 0; //await getBalanceOf(new Web3(globalProvider), (currentUsr as any)?.address, globalDetailNFT?._id, globalDetailNFT?.chainId || 1);
-      if (iHaveit === 1) {
-        setProcessing(false);
-        toast.warn("Your NFT is not on sale.");
-        return;
-      }
-      if (iHaveit && (iHaveit as any)?.message) {
-        toast.warn((iHaveit as any)?.message);
-      }
-      let checkResut = await checkWalletAddrAndChainId();
-      if (!checkResut) {
-        setProcessing(false);
-        return;
-      }
+    let checkResut = await checkWalletAddrAndChainId();
+    if (!checkResut) {
+      setProcessing(false);
+      return;
+    }
 
-      // let result = await changePrice(new Web3(globalProvider), (currentUsr as any)?.address, globalDetailNFT?._id, newPrice, globalDetailNFT?.chainId || 1 );
-      // if((result as any).success === true) toast.success((result as any).message + "Check your new item in your profile 'Collectibles' .");
-      // else toast.error((result as any).message);
+    setProcessing(true);
+    if (isSupportedEVMNetwork(currentNetworkSymbol) === true) {
+      let iHaveit;
+      try {
+        iHaveit = await getBalanceOf(
+          new Web3(globalProvider),
+          (currentUsr as any)?.address,
+          globalDetailNFT?._id,
+          globalDetailNFT?.networkSymbol || PLATFORM_NETWORKS.COREUM
+        );
+        if (iHaveit === 1) {
+          setProcessing(false);
+          toast.warn("Your NFT is not on sale.");
+          return;
+        }
+        if (iHaveit && (iHaveit as any)?.message) {
+          toast.warn((iHaveit as any)?.message);
+        }
+
+        let result = await changePrice(
+          new Web3(globalProvider),
+          (currentUsr as any)?.address,
+          globalDetailNFT?._id,
+          newPrice,
+          globalDetailNFT?.networkSymbol || PLATFORM_NETWORKS.COREUM
+        );
+        if ((result as any).success === true)
+          toast.success(
+            (result as any).message +
+              "Check your new item in your profile 'Collectibles' ."
+          );
+        else toast.error((result as any).message);
+      } catch (err) {
+        setProcessing(false);
+        console.log("failed on changing price : ", err);
+      }
+    }
+    if (currentNetworkSymbol === PLATFORM_NETWORKS.COREUM) {
       try {
         let checkBalance = await checkNativeCurrencyAndTokenBalances(0);
         if (checkBalance == false) return;
@@ -260,17 +289,11 @@ const NftMoreDropdown: FC<NftMoreDropdownProps> = ({
         console.log(error);
         toast.error("Transaction failed.");
       }
-
-      setProcessing(false);
-    } catch (err) {
-      setProcessing(false);
-      console.log("failed on changing price : ", err);
     }
+    setProcessing(false);
   };
 
   const removeSale = async () => {
-    setIsUnlisting(true);
-
     if (globalDetailNFT?.owner._id !== (currentUsr as any)?._id) {
       toast.warn("You are not the owner of this nft.");
       return;
@@ -283,37 +306,53 @@ const NftMoreDropdown: FC<NftMoreDropdownProps> = ({
       return;
     }
 
+    let checkResut = await checkWalletAddrAndChainId();
+    if (!checkResut) {
+      setProcessing(false);
+      return;
+    }
+
     setProcessing(true);
-    let iHaveit;
-    try {
-      iHaveit = 0; //await getBalanceOf(new Web3(globalProvider), (currentUsr as any)?.address, globalDetailNFT?._id, globalDetailNFT?.chainId || 1);
-      if (iHaveit === 1) {
-        setProcessing(false);
-        toast.warn("Your NFT is not on sale.");
-        return;
-      }
-      if (iHaveit && (iHaveit as any).message) {
-        toast.warn((iHaveit as any).message);
-      }
-      let checkResut = await checkWalletAddrAndChainId();
-      if (!checkResut) {
-        setProcessing(false);
-        return;
-      }
+    if (isSupportedEVMNetwork(currentNetworkSymbol) === true) {
+      let iHaveit;
+      try {
+        iHaveit = await getBalanceOf(
+          new Web3(globalProvider),
+          (currentUsr as any)?.address,
+          globalDetailNFT?._id,
+          globalDetailNFT?.networkSymbol || PLATFORM_NETWORKS.COREUM
+        );
+        if (iHaveit === 1) {
+          setProcessing(false);
+          toast.warn("Your NFT is not on sale.");
+          return;
+        }
+        if (iHaveit && (iHaveit as any).message) {
+          toast.warn((iHaveit as any).message);
+        }
 
-      // let result = await destroySale(new Web3(globalProvider), (currentUsr as any)?.address, globalDetailNFT?._id, globalDetailNFT?.chainId || 1);
-      // if((result as any).success === true) toast.success((result as any).message + "Check your new item in your profile 'Collectibles' .");
-      // else toast.error((result as any).message);
+        let result = await destroySale(
+          new Web3(globalProvider),
+          (currentUsr as any)?.address,
+          globalDetailNFT?._id,
+          globalDetailNFT?.networkSymbol || PLATFORM_NETWORKS.COREUM
+        );
+        if ((result as any).success === true)
+          toast.success(
+            (result as any).message +
+              "Check your new item in your profile 'Collectibles' ."
+          );
+        else toast.error((result as any).message);
 
-      setProcessing(false);
-    } catch (err) {
-      setProcessing(false);
-      console.log("failed on remove sale : ", err);
+        setProcessing(false);
+      } catch (err) {
+        setProcessing(false);
+        console.log("failed on remove sale : ", err);
+      }
     }
   };
 
   const deleteItem = async () => {
-    setIsDeleting(true);
     await axios
       .post(`${config.API_URL}api/item/deleteOne`, {
         ownerId: currentUsr?._id || "",
@@ -335,32 +374,52 @@ const NftMoreDropdown: FC<NftMoreDropdownProps> = ({
       toast.warn("You are not the owner of this nft.");
       return;
     }
+    let checkResut = await checkWalletAddrAndChainId();
+    if (!checkResut) {
+      setProcessing(false);
+      return;
+    }
     setProcessing(true);
-    let iHaveit;
-    try {
-      iHaveit = 1; //await getBalanceOf(new Web3(globalProvider), (currentUsr as any)?.address, globalDetailNFT?._id, globalDetailNFT?.chainId || 1);
-      if (iHaveit === 0) {
-        setProcessing(false);
-        toast.warn(
-          "You cannot burn NFT while it is on sale or you've not minted it ever."
-        );
-        return;
-      }
-      if (iHaveit && (iHaveit as any).message) {
-        toast.warn((iHaveit as any).message);
-      }
-      let checkBalance = await checkNativeCurrencyAndTokenBalances(0);
-      if (checkBalance == false) return;
-      let checkResut = await checkWalletAddrAndChainId();
-      if (!checkResut) {
-        setProcessing(false);
-        return;
-      }
-
-      // let result = await burnNFT(new Web3(globalProvider), (currentUsr as any)?.address, globalDetailNFT?._id, globalDetailNFT?.chainId || 1);
-      // if((result as any).success === true) toast.success((result as any).message + "Check your new item in your profile 'Collectibles' .");
-      // else toast.error((result as any).message);
+    if (isSupportedEVMNetwork(currentNetworkSymbol) === true) {
+      let iHaveit;
       try {
+        if ((globalDetailNFT?.isSale || 0) > 0) await removeSale();
+        iHaveit = await getBalanceOf(
+          new Web3(globalProvider),
+          (currentUsr as any)?.address,
+          globalDetailNFT?._id,
+          globalDetailNFT?.networkSymbol || PLATFORM_NETWORKS.COREUM
+        );
+        if (iHaveit === 0) {
+          setProcessing(false);
+          toast.warn(
+            "You cannot burn NFT while it is on sale or you've not minted it ever."
+          );
+          return;
+        }
+        if (iHaveit && (iHaveit as any).message) {
+          toast.warn((iHaveit as any).message);
+        }
+        let result = await burnEVMNFT(
+          new Web3(globalProvider),
+          (currentUsr as any)?.address,
+          globalDetailNFT?._id,
+          globalDetailNFT?.networkSymbol || PLATFORM_NETWORKS.COREUM
+        );
+        if ((result as any).success === true) {
+          toast.success("You've burnt an item.");
+          deleteItem();
+          navigate(`/page-author/${globalDetailNFT?.creator?._id || ""}`);
+        } else toast.error((result as any).message);
+      } catch (err) {
+        setProcessing(false);
+        console.log("failed on burn token : ", err);
+      }
+    }
+    if (currentNetworkSymbol === PLATFORM_NETWORKS.COREUM) {
+      try {
+        let checkBalance = await checkNativeCurrencyAndTokenBalances(0);
+        if (checkBalance == false) return;
         let txHash = burnNFT(
           currentUsr.address,
           globalDetailNFT.collection_id.cw721address,
@@ -391,9 +450,6 @@ const NftMoreDropdown: FC<NftMoreDropdownProps> = ({
         toast.error("Transaction failed.");
       }
       setProcessing(false);
-    } catch (err) {
-      setProcessing(false);
-      console.log("failed on burn token : ", err);
     }
   };
 
@@ -404,10 +460,20 @@ const NftMoreDropdown: FC<NftMoreDropdownProps> = ({
       toast.warn("You are not the owner of this nft.");
       return;
     }
+    let checkResut = await checkWalletAddrAndChainId();
+    if (!checkResut) {
+      setProcessing(false);
+      return;
+    }
     setProcessing(true);
-    let iHaveit;
-    try {
-      iHaveit = 1; //await getBalanceOf(new Web3(globalProvider), (currentUsr as any)?.address, globalDetailNFT?._id, globalDetailNFT?.chainId || 1);
+    if (isSupportedEVMNetwork(currentNetworkSymbol) === true) {
+      let iHaveit;
+      iHaveit = await getBalanceOf(
+        new Web3(globalProvider),
+        (currentUsr as any)?.address,
+        globalDetailNFT?._id,
+        globalDetailNFT?.networkSymbol || PLATFORM_NETWORKS.COREUM
+      );
       if (iHaveit === 0) {
         setProcessing(false);
         toast.warn(
@@ -418,17 +484,24 @@ const NftMoreDropdown: FC<NftMoreDropdownProps> = ({
       if (iHaveit && (iHaveit as any).message) {
         toast.warn((iHaveit as any).message);
       }
-      let checkBalance = await checkNativeCurrencyAndTokenBalances(0);
-      if (checkBalance == false) return;
-      let checkResut = await checkWalletAddrAndChainId();
-      if (!checkResut) {
-        setProcessing(false);
-        return;
-      }
-      // let result = await transferNFT(new Web3(globalProvider), (currentUsr as any)?.address, toAddr, globalDetailNFT?._id, globalDetailNFT?.chainId || 1);
-      // if((result as any).success === true) toast.success((result as any).message + "Check your new item in your profile 'Collectibles' .");
-      // else toast.error((result as any).message);
+      let result = await transferEVMNFT(
+        new Web3(globalProvider),
+        (currentUsr as any)?.address,
+        toAddr,
+        globalDetailNFT?._id,
+        globalDetailNFT?.networkSymbol || PLATFORM_NETWORKS.COREUM
+      );
+      if ((result as any).success === true)
+        toast.success(
+          (result as any).message +
+            "Check your new item in your profile 'Collectibles' ."
+        );
+      else toast.error((result as any).message);
+    }
+    if (currentNetworkSymbol === PLATFORM_NETWORKS.COREUM) {
       try {
+        let checkBalance = await checkNativeCurrencyAndTokenBalances(0);
+        if (checkBalance == false) return;
         let txHash = transferNFT(
           currentUsr.address,
           globalDetailNFT.collection_id.cw721address,
@@ -461,11 +534,8 @@ const NftMoreDropdown: FC<NftMoreDropdownProps> = ({
         console.log(error);
         toast.error("Transaction failed.");
       }
-      setProcessing(false);
-    } catch (err) {
-      setProcessing(false);
-      console.log("failed on transfer token : ", err);
     }
+    setProcessing(false);
   };
 
   const renderMenu = () => {
@@ -496,7 +566,7 @@ const NftMoreDropdown: FC<NftMoreDropdownProps> = ({
       <ModalDelete
         show={isBurning}
         onOk={() => burnToken()}
-        onCloseModalDelete={closeModalDelete}
+        onCloseModalDelete={closeModalBurn}
       />
       <ModalTransferToken
         show={isTransfering}

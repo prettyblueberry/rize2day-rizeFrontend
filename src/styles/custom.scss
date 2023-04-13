@@ -283,3 +283,41 @@
   border: 4px solid rgb(34, 197, 94);
   overflow: hidden;
 }
+
+.dropbtn {
+  padding: 16px;
+  font-size: 16px;
+  border: none;
+}
+
+.dropdown {
+  position: relative;
+  display: inline-block;
+  cursor: pointer;
+}
+
+.dropdown-content {
+  display: none;
+  position: absolute;
+  min-width: 160px;
+  box-shadow: 0px 8px 16px 0px rgba(0, 0, 0, 0.2);
+  z-index: 1;
+}
+
+.dropdown-content a {
+  padding: 9px 16px;
+  text-decoration: none;
+  display: block;
+}
+
+.dropdown:hover .dropdown-content {
+  display: block;
+}
+
+.web3modal-modal-lightbox {
+  z-index: 999 !important;
+}
+
+.clear-icon {
+  margin: 0 14px 0 0 !important;
+}

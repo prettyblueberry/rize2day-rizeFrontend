@@ -2,8 +2,6 @@ import React, { FC, useRef, useState, useEffect } from "react";
 import clsx from 'clsx';
 import { Helmet } from "react-helmet";
 import HeaderFilterSearchPage from "components/HeaderFilterSearchPage";
-import Input from "shared/Input/Input";
-import ButtonCircle from "shared/Button/ButtonCircle";
 import CardNFT from "components/CardNFT";
 import axios from "axios";
 import { config, CATEGORIES, FILE_TYPE } from "app/config";
@@ -60,7 +58,6 @@ const settings = {
 
 const PageSearch: FC<PageSearchProps> = ({ className = "" }) => {
   const [activeIndex, setActiveIndex] = useState(0);
-  const [search, setSearch] = useState("");
 
   const [date, setDate] = useState(0);
   const [likes, setLikes] = useState(0);
@@ -71,7 +68,6 @@ const PageSearch: FC<PageSearchProps> = ({ className = "" }) => {
   const [priceMin, setPriceMin] = useState("");
   const [priceMax, setPriceMax] = useState("");
   const [fileType, setFileType] = useState(0);
-  const [reSearch, setResearch] = useState(false);
   const [selectedCollection, setSelectedCollection] = useState({});
   const [metadatas, setMetaDatas] = useState([]);
   const [checked, setChecked] = React.useState([]);
@@ -93,17 +89,12 @@ const PageSearch: FC<PageSearchProps> = ({ className = "" }) => {
     likes,
     creator,
     range,
-    reSearch,
     selectedCollection,
     checked,
     status,
     priceMin,
     priceMax,
   ]);
-
-  const onSearch = () => {
-    setResearch(!reSearch);
-  };
 
   useEffect(() => {
     if (selectedCollection) {
@@ -144,7 +135,6 @@ const PageSearch: FC<PageSearchProps> = ({ className = "" }) => {
     // (param as any).range = range;
 
     (param as any).range = [range[0], range[1]];
-    (param as any).search = search;
     (param as any).sortmode = dateOptions[date].value;
     (param as any).fileType = fileType;
     // }
@@ -209,10 +199,7 @@ const PageSearch: FC<PageSearchProps> = ({ className = "" }) => {
     setLikes(0);
     setCreator(0);
     setStatus(3);
-    setPrice(0);
-    setSearch("");
     setRange([0, 100000]);
-    setResearch(false);
     // setSelectedCollection({});
     setMetaDatas([]);
     setChecked([]);
@@ -221,11 +208,6 @@ const PageSearch: FC<PageSearchProps> = ({ className = "" }) => {
     setFileType(0);
     localStorage.setItem("loading", "false");
     localStorage.setItem("currentItemCount", "0");
-  };
-
-  const onChangeSearch = (event) => {
-    setSearch(event.target.value);
-    onSearch();
   };
 
   const handlePrice = (type, event) => {
@@ -279,57 +261,6 @@ const PageSearch: FC<PageSearchProps> = ({ className = "" }) => {
       /> */}
       <div className="container-fluid sticky top-0 z-20 bg-white dark:bg-[#191818]">
         <header className="mx-auto flex flex-col">
-          <div className="relative max-w-xl mb-3">
-            <label
-              htmlFor="search-input"
-              className="text-neutral-500 dark:text-neutral-300"
-            >
-              <span className="sr-only">Search all items</span>
-              <Input
-                className="shadow-lg border-0 dark:border"
-                id="search-input"
-                type="search"
-                placeholder="Type your keywords"
-                sizeClass="pl-14 py-2 pr-5 md:pl-16"
-                rounded="rounded-full"
-                onChange={onChangeSearch}
-                value={search}
-              />
-              <ButtonCircle
-                className="absolute right-2.5 top-1/2 transform -translate-y-1/2"
-                size=" w-7 h-7"
-                type="button"
-                onClick={() => {
-                  getCollectionList(true);
-                }}
-              >
-                <i className="las la-arrow-right text-xl"></i>
-              </ButtonCircle>
-              <span className="absolute left-5 top-1/2 transform -translate-y-1/2 text-2xl md:left-6">
-                <svg
-                  className="h-5 w-5"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  xmlns="http://www.w3.org/2000/svg"
-                >
-                  <path
-                    d="M11.5 21C16.7467 21 21 16.7467 21 11.5C21 6.25329 16.7467 2 11.5 2C6.25329 2 2 6.25329 2 11.5C2 16.7467 6.25329 21 11.5 21Z"
-                    stroke="currentColor"
-                    strokeWidth="1.5"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                  <path
-                    d="M22 22L20 20"
-                    stroke="currentColor"
-                    strokeWidth="1.5"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                </svg>
-              </span>
-            </label>
-          </div>
           <HeaderFilterSearchPage
             className="mb-2"
             onChangeActiveTab={setActiveIndex}

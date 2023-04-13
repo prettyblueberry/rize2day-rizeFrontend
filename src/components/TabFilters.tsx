@@ -11,35 +11,44 @@ import { ChevronDownIcon } from "@heroicons/react/outline";
 // DEMO DATA
 const typeOfSales = [
   {
-    name: "All", id: "All"
+    name: "All",
+    id: "All",
   },
   {
-    name: "Buy Now", id: "Buy Now"
+    name: "Buy Now",
+    id: "Buy Now",
   },
   {
-    name: "On Auction", id: "On Auction"
+    name: "On Auction",
+    id: "On Auction",
   },
   {
-    name: "Listed", id: "Listed"
+    name: "Listed",
+    id: "Listed",
   },
 ];
 
 const fileTypes = [
   {
-    name: "All", id: "All"
+    name: "All",
+    id: "All",
   },
   {
-    name: "Image", id: "Image"
+    name: "Image",
+    id: "Image",
   },
   {
-    name: "Audio", id: "Audio"
+    name: "Audio",
+    id: "Audio",
   },
   {
-    name: "Video", id: "Video"
+    name: "Video",
+    id: "Video",
   },
   {
-    name: "3D", id: "3D"
-  }
+    name: "3D",
+    id: "3D",
+  },
 ];
 
 const sortOrderRadios = [
@@ -68,35 +77,40 @@ const TabFilters = (props) => {
   const handleChangePriceRange = (ranges: number[]) => {
     setRangePrices(ranges);
     if (props.onChangeRange !== undefined) props.onChangeRange(ranges);
-  }
+  };
 
   const handleChangeFileTypes = (index: number) => {
-    setfileTypesState(index || 0)
-    if (props.onChangeFileType !== undefined) props.onChangeFileType(Number(index) || 0);
+    setfileTypesState(index || 0);
+    if (props.onChangeFileType !== undefined)
+      props.onChangeFileType(Number(index) || 0);
   };
 
   const handleChangeVerifiedCreator = (value: boolean) => {
     setIsVerifiedCreator(value);
-    if (props.onChangeCreator !== undefined) props.onChangeCreator(Number(value));
-  }
+    if (props.onChangeCreator !== undefined)
+      props.onChangeCreator(Number(value));
+  };
 
   const handleChangeOrderType = (index: number) => {
-    setSortOrderStates(index || 0)
+    setSortOrderStates(index || 0);
     if (props.onChangeDate !== undefined) props.onChangeDate(index || 0);
   };
 
   const handleChangeSaleType = (index: number) => {
-    setSaleTypeStates(index || 0)
+    setSaleTypeStates(index || 0);
     if (props.onChangeStatus !== undefined) props.onChangeStatus(index || 0);
   };
 
   useEffect(() => {
     if (props.dateValue !== undefined) setSortOrderStates(props.dateValue);
     if (props.statusValue !== undefined) setSaleTypeStates(props.statusValue);
-    if (props.fileTypeValue !== undefined) setfileTypesState(props.fileTypeValue);
-    if (props.creatorValue !== undefined) setIsVerifiedCreator(Boolean(props.creatorValue));
-    if (props.rangeValue !== undefined && props.rangeValue.length == 2) setRangePrices(props.rangeValue);
-  }, [props])
+    if (props.fileTypeValue !== undefined)
+      setfileTypesState(props.fileTypeValue);
+    if (props.creatorValue !== undefined)
+      setIsVerifiedCreator(Boolean(props.creatorValue));
+    if (props.rangeValue !== undefined && props.rangeValue.length == 2)
+      setRangePrices(props.rangeValue);
+  }, [props]);
 
   // OK
   const renderXClear = () => {
@@ -126,14 +140,15 @@ const TabFilters = (props) => {
           <>
             <Popover.Button
               className={`flex items-center justify-center px-3 py-1.5 text-xs rounded-full border focus:outline-none
-               ${open
-                  ? "!border-green-400 "
-                  : "border-neutral-300 dark:border-green-400"
-                }
+               ${
+                 open
+                   ? "!border-green-400 "
+                   : "border-neutral-300 dark:border-green-400"
+               }
                 ${
-                // !!saleTypeStates.length
-                "!border-green-400 bg-green-400 text-green-900"
-                // : "border-neutral-300 dark:border-green-400 text-neutral-700 dark:text-neutral-300 hover:border-neutral-400 dark:hover:border-neutral-500"
+                  // !!saleTypeStates.length
+                  "!border-green-400 bg-green-400 text-green-900"
+                  // : "border-neutral-300 dark:border-green-400 text-neutral-700 dark:text-neutral-300 hover:border-neutral-400 dark:hover:border-neutral-500"
                 }
                 `}
             >
@@ -191,8 +206,10 @@ const TabFilters = (props) => {
                           name="radioSaleTypes"
                           label={item.name}
                           defaultChecked={saleTypeStates === index}
-                          onChange={(checked) => { if (Boolean(checked) == true) handleChangeSaleType(index); }
-                          }
+                          onChange={(checked) => {
+                            if (Boolean(checked) == true)
+                              handleChangeSaleType(index);
+                          }}
                         />
                       </div>
                     ))}
@@ -233,9 +250,9 @@ const TabFilters = (props) => {
               className={`flex items-center justify-center px-3 py-1.5 text-xs border rounded-full focus:outline-none 
               ${open ? "!border-green-400 " : ""}
                 ${
-                // !!sortOrderStates.length
-                "!border-green-400 bg-green-400 text-green-900"
-                // : "border-neutral-300 dark:border-green-400 text-neutral-700 dark:text-neutral-300 hover:border-neutral-400 dark:hover:border-neutral-500"
+                  // !!sortOrderStates.length
+                  "!border-green-400 bg-green-400 text-green-900"
+                  // : "border-neutral-300 dark:border-green-400 text-neutral-700 dark:text-neutral-300 hover:border-neutral-400 dark:hover:border-neutral-500"
                 }
                 `}
             >
@@ -305,7 +322,10 @@ const TabFilters = (props) => {
                         name="radioOrderSort"
                         label={item.name}
                         defaultChecked={sortOrderStates === index}
-                        onChange={(checked) => { if (Boolean(checked) == true) handleChangeOrderType(index) }}
+                        onChange={(checked) => {
+                          if (Boolean(checked) == true)
+                            handleChangeOrderType(index);
+                        }}
                       />
                     ))}
                   </div>
@@ -344,8 +364,9 @@ const TabFilters = (props) => {
             <Popover.Button
               className={`flex items-center justify-center px-3 py-1.5 text-xs rounded-full border focus:outline-none 
               ${open ? "!border-green-400 " : ""}
-                ${"!border-green-400 bg-green-400 text-green-900"
-                // : "border-neutral-300 dark:border-green-400 text-neutral-700 dark:text-neutral-300 hover:border-neutral-400 dark:hover:border-neutral-500"
+                ${
+                  "!border-green-400 bg-green-400 text-green-900"
+                  // : "border-neutral-300 dark:border-green-400 text-neutral-700 dark:text-neutral-300 hover:border-neutral-400 dark:hover:border-neutral-500"
                 }
                 `}
             >
@@ -396,7 +417,6 @@ const TabFilters = (props) => {
               <span className="ml-2">File Types</span>
 
               <ChevronDownIcon className="w-4 h-4 ml-3" />
-
             </Popover.Button>
             <Transition
               as={Fragment}
@@ -423,8 +443,7 @@ const TabFilters = (props) => {
                             if (checked == "Audio") handleChangeFileTypes(2);
                             if (checked == "Video") handleChangeFileTypes(3);
                             if (checked == "3D") handleChangeFileTypes(4);
-                          }
-                          }
+                          }}
                         />
                       </div>
                     ))}
@@ -499,7 +518,7 @@ const TabFilters = (props) => {
                 />
               </svg>
 
-              <span className="ml-2">{`${rangePrices[0]} RIZE - ${rangePrices[1]} RIZE`}</span>
+              <span className="ml-2">{`${rangePrices[0]} USD - ${rangePrices[1]} USD`}</span>
               {renderXClear()}
             </Popover.Button>
             <Transition
@@ -539,7 +558,7 @@ const TabFilters = (props) => {
                         </label>
                         <div className="mt-1 relative rounded-md">
                           <span className="absolute inset-y-0 right-4 flex items-center pointer-events-none text-neutral-500 sm:text-sm">
-                            RIZE
+                            USD
                           </span>
                           <input
                             type="text"
@@ -560,7 +579,7 @@ const TabFilters = (props) => {
                         </label>
                         <div className="mt-1 relative rounded-md">
                           <span className="absolute inset-y-0 right-4 flex items-center pointer-events-none text-neutral-500 sm:text-sm">
-                            RIZE
+                            USD
                           </span>
                           <input
                             type="text"
@@ -603,10 +622,11 @@ const TabFilters = (props) => {
   const renderTabVerifiedCreator = () => {
     return (
       <div
-        className={`flex items-center justify-center px-3 py-1.5 text-xs rounded-full border focus:outline-none cursor-pointer  ${isVerifiedCreator
-          ? "border-green-400 bg-green-400 text-green-900"
-          : "border-neutral-300 dark:border-green-400 text-neutral-700 dark:text-neutral-300 hover:border-neutral-400 dark:hover:border-neutral-500"
-          }`}
+        className={`flex items-center justify-center px-3 py-1.5 text-xs rounded-full border focus:outline-none cursor-pointer  ${
+          isVerifiedCreator
+            ? "border-green-400 bg-green-400 text-green-900"
+            : "border-neutral-300 dark:border-green-400 text-neutral-700 dark:text-neutral-300 hover:border-neutral-400 dark:hover:border-neutral-500"
+        }`}
         onClick={() => handleChangeVerifiedCreator(!isVerifiedCreator)}
       >
         <svg className="w-4 h-4" viewBox="0 0 20 20" fill="none">
@@ -849,7 +869,10 @@ const TabFilters = (props) => {
                                 name="radioOrderSort"
                                 label={item.name}
                                 defaultChecked={sortOrderStates === index}
-                                onChange={(checked) => { if (Boolean(checked) == true) handleChangeOrderType(index) }}
+                                onChange={(checked) => {
+                                  if (Boolean(checked) == true)
+                                    handleChangeOrderType(index);
+                                }}
                               />
                             ))}
                           </div>

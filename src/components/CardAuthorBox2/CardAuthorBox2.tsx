@@ -26,7 +26,7 @@ const CardAuthorBox2: FC<CardAuthorBox2Props> = ({ className = "" }) => {
         </div>
         <div className="absolute top-3 inset-x-3 flex">
           <div className=" py-1 px-4 bg-neutral-100 dark:bg-neutral-800 rounded-full flex items-center justify-center leading-none text-xs font-medium">
-            1.45 RIZE <ArrowRightIcon className="w-5 h-5 text-yellow-600 ml-3" />
+            1.45 USD <ArrowRightIcon className="w-5 h-5 text-yellow-600 ml-3" />
           </div>
         </div>
       </div>

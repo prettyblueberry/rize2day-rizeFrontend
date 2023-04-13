@@ -19,7 +19,7 @@ import CardNFTMusic from "components/CardNFTMusic";
 import CardNFTVideo from "components/CardNFTVideo";
 import CardNFT3D from "components/CardNFT3D";
 import {
-  selectCurrentChainId,
+  selectCurrentNetworkSymbol,
   selectCurrentUser,
 } from "app/reducers/auth.reducers";
 import { Helmet } from "react-helmet";
@@ -35,7 +35,7 @@ const ItemsOfCollection = () => {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
   const currentUsr = useAppSelector(selectCurrentUser);
-  const currentChainId = useAppSelector(selectCurrentChainId);
+  const currentNetworkSymbol = useAppSelector(selectCurrentNetworkSymbol);
 
   const [items, setItems] = useState([]);
   const [start, setStart] = useState(0);
@@ -249,8 +249,8 @@ const ItemsOfCollection = () => {
           style={{ textAlign: "center" }}
         >
           {collection && collection.price
-            ? "Floor price : " + collection.price + " RIZE"
-            : "Floor price : 0 " + " RIZE"}
+            ? "Floor price : " + collection.price + " USD"
+            : "Floor price : 0 " + " USD"}
         </div>
         <div
           className={styles.collectionDescription}

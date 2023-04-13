@@ -12,14 +12,14 @@ import axios from "axios";
 
 export interface CardNFTMusic2Props {
   className?: string;
-  featuredImage?: string,
-  item?: any
+  featuredImage?: string;
+  item?: any;
 }
 
 const CardNFTMusic2: FC<CardNFTMusic2Props> = ({
   className = "",
   featuredImage,
-  item = {}
+  item = {},
 }) => {
   const [DEMO_NFT_ID] = React.useState(nanoid());
 
@@ -105,9 +105,7 @@ const CardNFTMusic2: FC<CardNFTMusic2Props> = ({
     );
   };
 
-  const plusPlayCount = async () => {
-
-  }
+  const plusPlayCount = async () => {};
 
   return (
     <div
@@ -118,7 +116,11 @@ const CardNFTMusic2: FC<CardNFTMusic2Props> = ({
         <div className="relative w-16 sm:w-24">
           <NcImage
             containerClassName="absolute inset-0 rounded-2xl overflow-hidden shadow-lg "
-            src={featuredImage ? featuredImage : `${config.API_URL}uploads/${item.logoURL}`}
+            src={
+              featuredImage
+                ? featuredImage
+                : `${config.API_URL}uploads/${item.logoURL}`
+            }
           />
         </div>
 
@@ -127,7 +129,6 @@ const CardNFTMusic2: FC<CardNFTMusic2Props> = ({
           <div className=" flex items-center pt-3 mt-1.5">
             {renderAvatars()}
             <Prices
-              price="1.00 RIZE"
               labelText="Price"
               className="sm:ml-3.5"
               contentClass="py-1.5 px-2 sm:px-3 text-xs sm:text-sm font-semibold"

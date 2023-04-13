@@ -1,24 +1,30 @@
 import { SocialType } from "shared/SocialsShare/SocialsShare";
 import React, { FC } from "react";
-import facebook from "images/socials/facebook.svg";
-import vimeo from "images/socials/vimeo.svg";
-import twitter from "images/socials/twitter.svg";
-import telegram from "images/socials/telegram.svg";
-import youtube from "images/socials/youtube.svg";
-import { BsTwitter, BsYoutube } from "react-icons/bs";
-import { FaTelegramPlane, FaDiscord } from "react-icons/fa";
+// import facebook from "images/socials/facebook.svg";
+// import vimeo from "images/socials/vimeo.svg";
+// import twitter from "images/socials/twitter.svg";
+// import telegram from "images/socials/telegram.svg";
+// import youtube from "images/socials/youtube.svg";
+import { FiFacebook, FiYoutube } from 'react-icons/fi';
+import { TbBrandTelegram, TbBrandTwitter } from 'react-icons/tb';
+import { RiVimeoLine } from 'react-icons/ri';
+import { RxDiscordLogo } from 'react-icons/rx';
 
 export interface SocialsList1Props {
   className?: string;
 }
 
 const socials: SocialType[] = [
-  // { name: "Facebook", icon: facebook, href: "#" },
-  // { name: "Vimeo", icon: vimeo, href: "#" },
-  { name: "Twitter", icon: <BsTwitter color={'#21c689'} />, href: "#" },
-  { name: "Telegram", icon: <FaTelegramPlane color={'#21c689'} />, href: "#" },
-  { name: "Discord", icon: <FaDiscord color={'#21c689'} />, href: "#" },
-  { name: "Youtube", icon: <BsYoutube color={'#21c689'} />, href: "#" },
+  { name: "Facebook", icon: <FiFacebook color={'#33FF00'} />, href: "#" },
+  { name: "Vimeo", icon: <RiVimeoLine color={'#33FF00'} />, href: "#" },
+  { name: "Youtube", icon: <FiYoutube color={'#33FF00'} />, href: "#" },
+  { name: "Twitter", icon: <TbBrandTwitter color={'#33FF00'} />, href: "#" },
+  { name: "Telegram", icon: <TbBrandTelegram color={'#33FF00'} />, href: "#" },
+  { name: "Discord", icon: <RxDiscordLogo color={'#33FF00'} />, href: "#" },
+  // { name: "Twitter", icon: <BsTwitter color={'#33FF00'} />, href: "#" },
+  // { name: "Telegram", icon: <FaTelegramPlane color={'#33FF00'} />, href: "#" },
+  // { name: "Discord", icon: <FaDiscord color={'#33FF00'} />, href: "#" },
+  // { name: "Youtube", icon: <BsYoutube color={'#33FF00'} />, href: "#" },
 ];
 
 const SocialsList1: FC<SocialsList1Props> = ({ className = "space-y-3" }) => {
@@ -26,10 +32,10 @@ const SocialsList1: FC<SocialsList1Props> = ({ className = "space-y-3" }) => {
     return (
       <a
         href={item.href}
-        className="flex items-center opacity-70 text-2xl text-neutral-700 hover:text-black dark:text-neutral-300 dark:hover:text-white leading-none space-x-2 group"
+        className="flex items-center opacity-70 text-2xl text-[#33FF00] leading-none space-x-2 group"
         key={index}
       >
-        <div className="inline-flex items-center justify-center rounded-[50%] w-12 h-12 bg-[#2b4142] hover:bg-[#354d4e]">
+        <div className="inline-flex items-center justify-center w-6 h-6 bg-transparent">
           {/* <img className="opacity-80" src={item.icon} alt="" /> */}
           {item.icon}
         </div>

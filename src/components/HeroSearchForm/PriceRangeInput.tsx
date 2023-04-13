@@ -20,8 +20,9 @@ const PriceRangeInput: FC<PriceRangeInputProps> = ({
       {({ open, close }) => (
         <>
           <div
-            className={`flex-1 ${open ? "nc-hero-field-focused" : ""
-              } flex flex-col sm:flex-row justify-between cursor-pointer`}
+            className={`flex-1 ${
+              open ? "nc-hero-field-focused" : ""
+            } flex flex-col sm:flex-row justify-between cursor-pointer`}
           >
             <Popover.Button
               className={`flex items-center flex-1 text-left items-cente space-x-3 focus:outline-none ${fieldClassName} `}
@@ -74,7 +75,7 @@ const PriceRangeInput: FC<PriceRangeInputProps> = ({
               </div>
               <div className="flex-grow">
                 <span className="block xl:text-lg font-semibold truncate min-w-[170px]">
-                  {`${rangePrices[0]}RIZE ~ ${rangePrices[1]}RIZE`}
+                  {`${rangePrices[0]} USD ~ ${rangePrices[1]} USD`}
                 </span>
                 <span className="block mt-1 text-sm text-neutral-400 leading-none font-light ">
                   Price range
@@ -123,7 +124,7 @@ const PriceRangeInput: FC<PriceRangeInputProps> = ({
                     </label>
                     <div className="mt-1 relative rounded-md">
                       <span className="absolute inset-y-0 right-4 flex items-center pointer-events-none text-neutral-500  text-xs sm:text-sm">
-                        RIZE
+                        USD
                       </span>
                       <input
                         type="text"
@@ -144,7 +145,7 @@ const PriceRangeInput: FC<PriceRangeInputProps> = ({
                     </label>
                     <div className="mt-1 relative rounded-md">
                       <span className="absolute inset-y-0 right-4 flex items-center pointer-events-none text-neutral-500  text-xs sm:text-sm">
-                        RIZE
+                        USD
                       </span>
                       <input
                         type="text"

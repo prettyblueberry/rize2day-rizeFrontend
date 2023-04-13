@@ -44,7 +44,7 @@ const Card = ({ className, item }) => {
           <div className={styles.line}>
             <div className={styles.title}>{item.name}</div>
             <div className={styles.price}>
-              {/* {item.price? item.price + (chains[item?.chainId || 1]?.currency || "RIZE") : "0 RIZE" }  */}
+              {/* {item.price? item.price + (chains[item?.chainId || 1]?.currency || "USD") : "0 USD" }  */}
             </div>
           </div>
           <div className={styles.line}>
@@ -66,7 +66,7 @@ const Card = ({ className, item }) => {
           <div className={styles.status}>
             <Icon name="candlesticks-up" size="20" />
             Highest bid <span>{(item.bids && item.bids.length > 0) ? item.bids[item.bids.length - 1].price : 0} 
-              {/* {chains[item?.chainId || 1]?.currency || "RIZE"} */}
+              {/* {chains[item?.chainId || 1]?.currency || "USD"} */}
               </span>
           </div>
           <div

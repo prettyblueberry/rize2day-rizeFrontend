@@ -20,7 +20,7 @@ import {
   selectConsideringCollectionId,
 } from "app/reducers/collection.reducers";
 import {
-  selectCurrentChainId,
+  selectCurrentNetworkSymbol,
   selectCurrentUser,
   selectCurrentWallet,
   selectDetailedUser,
@@ -29,7 +29,7 @@ import {
 } from "app/reducers/auth.reducers";
 import { Navigate, useNavigate } from "react-router-dom";
 import { isEmpty, hasKey } from "app/methods";
-import { config } from "app/config.js";
+import { config, PLATFORM_NETWORKS } from "app/config.js";
 import {
   changeTradingResult,
   selectCurrentTradingResult,
@@ -46,6 +46,10 @@ import SchemaList from "components/SchemaList";
 import { useSigningClient } from "app/cosmwasm";
 import { FILE_TYPE } from "app/config.js";
 import { pinFileToIPFS, pinJSONToIPFS } from "utils/pinatasdk";
+import {
+  isSupportedEVMNetwork,
+  isSupportedNetwork,
+} from "InteractWithSmartContract/interact";
 
 const DEFAULT_SCHEMA = {
   attributes: [],
@@ -99,7 +103,7 @@ const PageUploadItem: FC<PageUploadItemProps> = ({ className = "" }) => {
   const tradingResult = useAppSelector(selectCurrentTradingResult);
   const walletStatus = useAppSelector(selectWalletStatus);
   const globalProvider = useAppSelector(selectGlobalProvider);
-  const currentChainId = useAppSelector(selectCurrentChainId);
+  const currentNetworkSymbol = useAppSelector(selectCurrentNetworkSymbol);
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
 
@@ -155,11 +159,25 @@ const PageUploadItem: FC<PageUploadItemProps> = ({ className = "" }) => {
     if (collections && collections.length > 0) {
       let tempOptions: any = [];
       collections.map((coll, index) => {
-        if (coll.collectionNumber && coll.collectionNumber >= 0) {
+        if (
+          currentNetworkSymbol === PLATFORM_NETWORKS.COREUM &&
+          coll.collectionNumber &&
+          coll.collectionNumber >= 0
+        ) {
           tempOptions.push({
             _id: coll?._id || "",
             name: coll?.name || "",
-            bannerURL: coll?.bannerURL || "",
+            logoURL: coll?.logoURL || "",
+            address: coll?.address || "",
+            cw721address: coll?.cw721address || "",
+            collectionNumber: coll?.collectionNumber || "",
+          });
+        }
+        if (isSupportedEVMNetwork(currentNetworkSymbol) === true) {
+          tempOptions.push({
+            _id: coll?._id || "",
+            name: coll?.name || "",
+            logoURL: coll?.logoURL || "",
             address: coll?.address || "",
             cw721address: coll?.cw721address || "",
             collectionNumber: coll?.collectionNumber || "",
@@ -267,7 +285,7 @@ const PageUploadItem: FC<PageUploadItemProps> = ({ className = "" }) => {
       balances[config.COIN_MINIMAL_DENOM] <= 0 ||
       (tokenAmountShouldPay > 0 && balances.cw20 <= tokenAmountShouldPay)
     ) {
-      toast.warn("Insufficient TESTCORE or RIZE");
+      toast.warn("Insufficient TESTCORE or USD");
       return false;
     }
     return true;
@@ -296,7 +314,7 @@ const PageUploadItem: FC<PageUploadItemProps> = ({ className = "" }) => {
         metas.push(metaList);
       }
     }
-    axios
+    await axios
       .post(`${config.API_URL}api/item/multiple_create`, {
         params,
         names,
@@ -307,69 +325,74 @@ const PageUploadItem: FC<PageUploadItemProps> = ({ className = "" }) => {
         if (response.status === 200) {
           toast.success("All items were saved.");
           const IdArray = [...response.data];
-          var prices = [];
-          for (let idx = 0; idx < IdArray.length; idx++) prices[idx] = 0;
-          //do transaction
-          try {
-            let colllectionInfo = await collectionConfig(selected.address);
-            let startId = colllectionInfo.unused_token_id;
-            let balanceCheck = await checkNativeCurrencyAndTokenBalances(0);
-            if (balanceCheck === false) {
+          if (currentNetworkSymbol === PLATFORM_NETWORKS.COREUM) {
+            var prices = [];
+            for (let idx = 0; idx < IdArray.length; idx++) prices[idx] = 0;
+            //do transaction
+            try {
+              let colllectionInfo = await collectionConfig(selected.address);
+              let startId = colllectionInfo.unused_token_id;
+              let balanceCheck = await checkNativeCurrencyAndTokenBalances(0);
+              if (balanceCheck === false) {
+                axios
+                  .post(`${config.API_URL}api/item/deleteManyByIds`, {
+                    idArray: IdArray,
+                  })
+                  .then((response) => {})
+                  .catch((error) => {
+                    console.log(error);
+                  });
+                return;
+              }
+              let txHash = await batchMint(
+                currentUsr.address,
+                selected.address,
+                params.metadataURIs,
+                names
+              );
+              //succeed, then update all items with token ids
+              if (txHash == -1) {
+                toast.error("Network error.");
+                axios
+                  .post(`${config.API_URL}api/item/deleteManyByIds`, {
+                    idArray: IdArray,
+                  })
+                  .then((response) => {})
+                  .catch((error) => {
+                    console.log(error);
+                  });
+              } else {
+                axios
+                  .post(`${config.API_URL}api/item/updateTokenIds`, {
+                    idArray: IdArray,
+                    startTokenId: startId,
+                  })
+                  .then((response) => {
+                    if (response.data.code === 0) {
+                      toast.success("You've created NFTs sucessfully.");
+                      navigate("/page-author/" + currentUsr?._id);
+                    }
+                  })
+                  .catch((error) => {
+                    toast.error("Server side error.");
+                  });
+              }
+            } catch (error) {
+              console.log(error);
+              toast.error(error.message);
+              //if tx fail, then delete all items on DB
               axios
                 .post(`${config.API_URL}api/item/deleteManyByIds`, {
                   idArray: IdArray,
                 })
                 .then((response) => {})
-                .catch((error) => {
-                  console.log(error);
-                });
-              return;
-            }
-            let txHash = await batchMint(
-              currentUsr.address,
-              selected.address,
-              params.metadataURIs,
-              names
-            );
-            //succeed, then update all items with token ids
-            if (txHash == -1) {
-              toast.error("Network error.");
-              axios
-                .post(`${config.API_URL}api/item/deleteManyByIds`, {
-                  idArray: IdArray,
-                })
-                .then((response) => {})
-                .catch((error) => {
-                  console.log(error);
-                });
-            } else {
-              axios
-                .post(`${config.API_URL}api/item/updateTokenIds`, {
-                  idArray: IdArray,
-                  startTokenId: startId,
-                })
-                .then((response) => {
-                  if (response.data.code === 0) {
-                    toast.success("You've created NFTs sucessfully.");
-                    navigate("/page-author/" + currentUsr?._id);
-                  }
-                })
-                .catch((error) => {
-                  toast.error("Server side error.");
+                .catch((error1) => {
+                  console.log(error1);
                 });
             }
-          } catch (error) {
-            console.log(error);
-            toast.error(error.message);
-            //if tx fail, then delete all items on DB
-            axios
-              .post(`${config.API_URL}api/item/deleteManyByIds`, {
-                idArray: IdArray,
-              })
-              .then((response) => {})
-              .catch((error1) => {
-                console.log(error1);
-              });
+          } else if (isSupportedEVMNetwork(currentNetworkSymbol) === true) {
+            toast.success("You've created NFTs sucessfully.");
+            navigate("/page-author/" + currentUsr?._id);
           }
           setWorking(false);
         } else {
@@ -451,6 +474,12 @@ const PageUploadItem: FC<PageUploadItemProps> = ({ className = "" }) => {
         return;
       }
     }
+    if (isSupportedNetwork(currentNetworkSymbol) === false) {
+      toast.warn(
+        "Please connect your wallet to a network we support and try again."
+      );
+      return;
+    }
     if (isEmpty(currentUsr)) {
       toast.warn("You have to sign in before doing a trading.");
       return;
@@ -495,6 +524,7 @@ const PageUploadItem: FC<PageUploadItemProps> = ({ className = "" }) => {
         formData.append("authorId", "hch");
         formData.append("collectionName", selected?.name);
 
+        setWorking(true);
         await axios({
           method: "post",
           url: `${config.API_URL}api/utils/upload_file`,
@@ -514,6 +544,7 @@ const PageUploadItem: FC<PageUploadItemProps> = ({ className = "" }) => {
       var considering_files = [];
       considering_files = fileCategory > 1 ? sel_MultiMediafiles : sel_files;
 
+      setWorking(true);
       if (
         considering_files.length > 0 &&
         considering_files.length <= config.MAXIMUM_UPLOAD
@@ -556,8 +587,9 @@ const PageUploadItem: FC<PageUploadItemProps> = ({ className = "" }) => {
           mutiPaths: paths,
           timeLength: timeLength,
           stockGroupId: new Date().getTime(),
-          chainId: currentChainId || 1,
+          chainId: currentNetworkSymbol || 1,
           metadataURIs: uris,
+          networkSymbol: currentNetworkSymbol || 0,
         };
         await saveMultipleItem(params, paths);
       } else {
@@ -603,25 +635,6 @@ const PageUploadItem: FC<PageUploadItemProps> = ({ className = "" }) => {
         toast.warn("Video file size should be less than 100MB");
         return;
       }
-      let reader1 = new FileReader();
-      reader1.readAsDataURL(file);
-      reader1.onload = () => {
-        var videoElement = document.createElement("video");
-        videoElement.src = file.name;
-        var timer = setInterval(function () {
-          if (videoElement.readyState === 4) {
-            console.log(
-              "The duration is: " +
-                videoElement.duration.toFixed(2) +
-                " seconds"
-            );
-            clearInterval(timer);
-          }
-        }, 500);
-      };
-      reader1.onerror = function (error: any) {
-        console.log("music file choosing error : ", error);
-      };
     }
     setSelMutilMediaFiles([...event.target.files]);
     setSelectedMusicFile(file);
@@ -850,10 +863,12 @@ const PageUploadItem: FC<PageUploadItemProps> = ({ className = "" }) => {
             <div className="mt-10 space-y-5 md:mt-0 sm:space-y-6 md:sm:space-y-8">
               <div>
                 <h3 className="text-lg font-semibold sm:text-2xl">
-                  {fileCategory < 2 ? "Image files" : "Preview image"}
+                  {fileCategory < 2 ? "Image files" : "Preview image or video"}
                 </h3>
                 <span className="text-sm text-neutral-500 dark:text-neutral-400">
-                  File types supported: PNG, JPEG, GIF, WEBP
+                  {fileCategory < 2
+                    ? "File types supported: PNG, JPEG, GIF, WEBP"
+                    : "File types supported: PNG, JPEG, GIF, WEBP, MP4"}
                 </span>
                 <div className="mt-5 ">
                   <div className="relative flex justify-center px-6 pt-5 pb-6 mt-1 border-2 border-dashed border-neutral-300 dark:border-neutral-6000 rounded-xl">
@@ -875,7 +890,7 @@ const PageUploadItem: FC<PageUploadItemProps> = ({ className = "" }) => {
                       <div className="flex justify-center text-sm text-neutral-6000 dark:text-neutral-300">
                         <span className="text-green-500">
                           {fileCategory > 1
-                            ? "Upload a image file"
+                            ? "Upload a preview image or video"
                             : "Upload image files"}
                         </span>
                         <label
@@ -888,7 +903,7 @@ const PageUploadItem: FC<PageUploadItemProps> = ({ className = "" }) => {
                               name="file-upload2"
                               type="file"
                               className="sr-only"
-                              accept=".png,.jpeg,.jpg,.gif,.webp"
+                              accept=".png,.jpeg,.jpg,.gif,.webp,.mp4"
                               onChange={changeFile}
                             />
                           ) : (
@@ -903,7 +918,7 @@ const PageUploadItem: FC<PageUploadItemProps> = ({ className = "" }) => {
                             />
                           )}
                         </label>
-                        <p className="pl-1">or drag and drop</p>
+                        {/* <p className="pl-1">or drag and drop</p> */}
                       </div>
                       <p className="text-xs text-neutral-500 dark:text-neutral-400">
                         {fileCategory > 1
@@ -924,7 +939,12 @@ const PageUploadItem: FC<PageUploadItemProps> = ({ className = "" }) => {
                     Audio/Video/3D file
                   </h3>
                   <span className="text-sm text-neutral-500 dark:text-neutral-400">
-                    File types supported: MP3, mp4
+                    File types supported:{" "}
+                    {fileCategory === FILE_TYPE.AUDIO
+                      ? "MP3"
+                      : fileCategory === FILE_TYPE.VIDEO
+                      ? "MP4"
+                      : "GLB"}
                   </span>
                   <div className="mt-5 ">
                     <div className="relative flex justify-center px-6 pt-5 pb-6 mt-1 border-2 border-dashed border-neutral-300 dark:border-neutral-6000 rounded-xl">
@@ -966,7 +986,7 @@ const PageUploadItem: FC<PageUploadItemProps> = ({ className = "" }) => {
                               multiple
                             />
                           </label>
-                          <p className="pl-1">or drag and drop</p>
+                          {/* <p className="pl-1">or drag and drop</p> */}
                         </div>
                         <p className="text-xs text-neutral-500 dark:text-neutral-400">
                           {sel_MultiMediafiles.length > 0
@@ -1026,7 +1046,7 @@ const PageUploadItem: FC<PageUploadItemProps> = ({ className = "" }) => {
                   <RadioGroup.Label className="sr-only">
                     Server size
                   </RadioGroup.Label>
-                  <div className="flex py-2 space-x-4 overflow-auto customScrollBar">
+                  <div className="flex py-2 space-x-4 overflow-auto customScrollBar pl-3">
                     {colls.map((plan, index) => (
                       <RadioGroup.Option
                         key={index}
@@ -1058,7 +1078,7 @@ const PageUploadItem: FC<PageUploadItemProps> = ({ className = "" }) => {
                                       <NcImage
                                         containerClassName="aspect-w-1 aspect-h-1 rounded-full overflow-hidden"
                                         src={`${config.API_URL}uploads/${
-                                          plan?.bannerURL || ""
+                                          plan?.logoURL || ""
                                         }`}
                                       />
                                     </RadioGroup.Description>
@@ -1074,7 +1094,7 @@ const PageUploadItem: FC<PageUploadItemProps> = ({ className = "" }) => {
                                       checked ? "text-white" : ""
                                     }`}
                                   >
-                                    {plan?.name || ""}
+                                    {plan?.name.substring(0, 10) + "..." || ""}
                                   </RadioGroup.Label>
                                 </div>
                               </div>

@@ -12,7 +12,7 @@ import { fromBase64, toBase64 } from "@cosmjs/encoding";
 import { makeSignDoc as AminoMakeSignDoc } from "@cosmjs/amino";
 import { AuthInfo, TxBody, TxRaw } from "cosmjs-types/cosmos/tx/v1beta1/tx";
 import { MsgTransfer } from "cosmjs-types/ibc/applications/transfer/v1/tx";
-import { config, chainConfig } from "./config.js";
+import { config, chainConfig, PLATFORM_NETWORKS } from "./config.js";
 import { isEmpty } from "app/methods";
 import { QueryClient } from "react-query";
 import { coins } from "@cosmjs/stargate";
@@ -20,6 +20,11 @@ import {
   convertDenomToMicroDenom,
   convertMicroDenomToDenom,
 } from "utils/utils";
+import { useAppDispatch } from "../app/hooks.ts";
+import {
+  changeNetworkSymbol,
+  changeWalletAddress,
+} from "./reducers/auth.reducers";
 
 const SALE_TYPE = {
   Fixed: 0,
@@ -92,6 +97,7 @@ export const SigningCosmWasmProvider = ({ children }) => {
   const [signingClient, setSigningClient] = useState(null);
   const [walletAddress, setWalletAddress] = useState("");
   const [balances, setBalances] = useState({});
+  const dispatch = useAppDispatch();
 
   const MARKETPLACE = config.MARKETPLACE;
   const CW20_CONTRACT = config.CW20_CONTRACT;

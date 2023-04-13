@@ -29,7 +29,7 @@ const Marquee3D = () => {
   }, []);
 
   return (
-    <div className="relative w-full h-[550px]">
+    <div className="relative w-full h-[500px]">
       <div className={"absolute top-0 bottom-0 flex items-center w-full"}>
         {popularItems.length > 0 && (
           <MarqueeSlider items={popularItems} speed={4 * 10 ** 5} delay={4} width={isBigScreen ? 300 : isDesktopOrLaptop ? 200 : 200} />

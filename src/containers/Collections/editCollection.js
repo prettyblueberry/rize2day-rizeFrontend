@@ -19,7 +19,7 @@ import { useAppDispatch, useAppSelector } from "app/hooks";
 
 import ButtonPrimary from "shared/Button/ButtonPrimary";
 import {
-  selectCurrentChainId,
+  selectCurrentNetworkSymbol,
   selectCurrentUser,
 } from "app/reducers/auth.reducers";
 import { changeConsideringCollectionId } from "app/reducers/collection.reducers";
@@ -140,7 +140,7 @@ const EditCollection = () => {
       balances[config.COIN_MINIMAL_DENOM] <= 0 ||
       (tokenAmountShouldPay > 0 && balances.cw20 <= tokenAmountShouldPay)
     ) {
-      toast.warn("Insufficient TESTCORE or RIZE");
+      toast.warn("Insufficient TESTCORE or USD");
       return false;
     }
     return true;

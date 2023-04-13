@@ -33,7 +33,7 @@ const EffectListBox: FC<EffectListBoxProps> = ({
   }
   return (
     <div
-      className={`nc-EffectListBox z-[100] ${className}`}
+      className={`nc-EffectListBox z-[10] ${className}`}
       data-nc-id="EffectListBox"
     >
       <Listbox value={selected} onChange={handleSelect}>

@@ -34,7 +34,7 @@ const CardAuthorBox: FC<CardAuthorBoxProps> = ({ className = "", index }) => {
         <div className={`mt-1 text-sm font-medium`}>
           <span>1.549</span>
           {` `}
-          <span className="text-neutral-400 font-normal">RIZE</span>
+          <span className="text-neutral-400 font-normal">USD</span>
         </div>
       </div>
       <FollowButton className="mt-3" />

@@ -34,7 +34,7 @@ export default [
     {
         "id": 4,
         "title": "Mint NFT",
-        "description": "For every new NFT that you wish to create, it is necessary to buy RIZE. Upload your files into the right category, add some information for potential buyers to see, and proceed to validate and seal each NFT using your Wallet.",
+        "description": "For every new NFT that you wish to create, it is necessary to buy USD. Upload your files into the right category, add some information for potential buyers to see, and proceed to validate and seal each NFT using your Wallet.",
         "image": {
             "src": "/images/tutorial/4.png"
         }

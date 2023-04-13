@@ -20,7 +20,7 @@ import {
   selectConsideringCollectionId,
 } from "app/reducers/collection.reducers";
 import {
-  selectCurrentChainId,
+  selectCurrentNetworkSymbol,
   selectCurrentUser,
   selectCurrentWallet,
   selectDetailedUser,
@@ -29,7 +29,7 @@ import {
 } from "app/reducers/auth.reducers";
 import { Navigate, useNavigate } from "react-router-dom";
 import { isEmpty } from "app/methods";
-import { config } from "app/config.js";
+import { config, PLATFORM_NETWORKS } from "app/config.js";
 import {
   changeTradingResult,
   selectCurrentTradingResult,
@@ -45,6 +45,13 @@ import Dropdown from "../components/Dropdown";
 import { useSigningClient } from "app/cosmwasm";
 import { FILE_TYPE } from "app/config.js";
 import { pinFileToIPFS, pinJSONToIPFS } from "utils/pinatasdk";
+import {
+  isSupportedEVMNetwork,
+  isSupportedNetwork,
+  singleMintOnSale,
+} from "InteractWithSmartContract/interact";
+import Web3 from "web3";
+import { parseBlob } from "music-metadata-browser";
 
 export interface PageUploadItemProps {
   className?: string;
@@ -94,7 +101,7 @@ const PageUploadItem: FC<PageUploadItemProps> = ({ className = "" }) => {
   const tradingResult = useAppSelector(selectCurrentTradingResult);
   const walletStatus = useAppSelector(selectWalletStatus);
   const globalProvider = useAppSelector(selectGlobalProvider);
-  const currentChainId = useAppSelector(selectCurrentChainId);
+  const currentNetworkSymbol = useAppSelector(selectCurrentNetworkSymbol);
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
 
@@ -143,11 +150,26 @@ const PageUploadItem: FC<PageUploadItemProps> = ({ className = "" }) => {
     if (collections && collections.length > 0) {
       let tempOptions: any = [];
       collections.map((coll, index) => {
-        if (coll.collectionNumber && coll.collectionNumber >= 0) {
+        console.log(`collections[${index}] ==>`, coll);
+        if (
+          currentNetworkSymbol === PLATFORM_NETWORKS.COREUM &&
+          coll.collectionNumber &&
+          coll.collectionNumber >= 0
+        ) {
           tempOptions.push({
             _id: coll?._id || "",
             name: coll?.name || "",
-            bannerURL: coll?.bannerURL || "",
+            logoURL: coll?.logoURL || "",
+            address: coll?.address || "",
+            cw721address: coll?.cw721address || "",
+            collectionNumber: coll?.collectionNumber || "",
+          });
+        }
+        if (isSupportedEVMNetwork(currentNetworkSymbol) === true) {
+          tempOptions.push({
+            _id: coll?._id || "",
+            name: coll?.name || "",
+            logoURL: coll?.logoURL || "",
             address: coll?.address || "",
             cw721address: coll?.cw721address || "",
             collectionNumber: coll?.collectionNumber || "",
@@ -275,7 +297,7 @@ const PageUploadItem: FC<PageUploadItemProps> = ({ className = "" }) => {
       balances[config.COIN_MINIMAL_DENOM] <= 0 ||
       (tokenAmountShouldPay > 0 && balances.cw20 <= tokenAmountShouldPay)
     ) {
-      toast.warn("Insufficient TESTCORE or RIZE");
+      toast.warn("Insufficient TESTCORE or USD");
       return false;
     }
     return true;
@@ -302,7 +324,7 @@ const PageUploadItem: FC<PageUploadItemProps> = ({ className = "" }) => {
                 //   aucperiod * 24 * 3600,
                 //   price,
                 //   0,
-                //   currentChainId || 1
+                //   currentNetworkSymbol || 1
                 // );
                 // if (ret.success === true) {
                 //   setWorking(false);
@@ -361,87 +383,131 @@ const PageUploadItem: FC<PageUploadItemProps> = ({ className = "" }) => {
             // if (sale === true) {
             var newItemId = response.data._id;
             try {
-              //------------------ for erc20 -----------------
-              // let ret = await singleMintOnSale(
-              //   new Web3(globalProvider),
-              //   currentUsr?.address || "",
-              //   response.data._id,
-              //   aucperiod * 24 * 3600 ,
-              //   price,
-              //   0,
-              //   currentChainId || 1
-              // );
-              // if (ret.success === true) {
-              //   setWorking(false);
-              //   toast.success(<div>Successfully minted an item. You can see items at <span style={{color:"#00f"}} onClick={() => navigate(`/collectionItems/${params.collectionId}`)}>here</span></div>);
-              // }
-              // else {
-              //   setWorking(false);
-              //   console.log("Failed in put on sale : " + ret.message);
-              //   toast.error("Failed in token deployment");
-              //   return;
-              // }
-              //-------------upper codes are for erc20-------------------
-
-              let colllectionInfo = await collectionConfig(selected.address);
-              let unusedTokenId = colllectionInfo.unused_token_id;
-              let balanceCheck = await checkNativeCurrencyAndTokenBalances(0);
-              if (balanceCheck == false) {
-                axios
-                  .post(`${config.API_URL}api/item/deleteOne`, {
-                    itemId: newItemId,
-                    ownerId: currentUsr._id || "",
-                  })
-                  .then((response) => {})
-                  .catch((error) => {});
-                return;
-              }
-              const txHash = await mintNFT(
-                currentUsr.address,
-                selected.address,
-                params.itemName,
-                "ipfs://" + params.metadataURI
-              );
-              if (txHash != -1) {
-                //update item with token id
-                await axios
-                  .post(`${config.API_URL}api/item/updateTokenId`, {
-                    itemId: newItemId,
-                    tokenId: unusedTokenId,
-                  })
-                  .then((response) => {
+              if (isSupportedEVMNetwork(currentNetworkSymbol) === true) {
+                if (sale === true) {
+                  //------------------ for evm -----------------
+                  var aucperiod =
+                    auction === false ? 0 : response.data.auctionPeriod;
+                  var price = response.data.price;
+                  let ret = await singleMintOnSale(
+                    new Web3(globalProvider),
+                    currentUsr?.address || "",
+                    newItemId,
+                    aucperiod,
+                    price,
+                    0,
+                    currentNetworkSymbol
+                  );
+                  if (ret.success === true) {
                     setWorking(false);
-                    if (response.data.code == 0)
-                      toast.success(
-                        <div>
-                          Successfully created an item. You can see items at{" "}
-                          <span
-                            style={{ color: "#00f" }}
-                            onClick={() =>
-                              navigate(
-                                `/collectionItems/${params.collectionId}`
-                              )
-                            }
-                          >
-                            here
-                          </span>
-                        </div>
-                      );
+                    toast.success(
+                      <div>
+                        Successfully minted an item. You can see items at{" "}
+                        <span
+                          style={{ color: "#00f" }}
+                          onClick={() =>
+                            navigate(`/collectionItems/${params.collectionId}`)
+                          }
+                        >
+                          here
+                        </span>
+                      </div>
+                    );
                     navigate("/page-author/" + currentUsr?._id);
-                  })
-                  .catch((error) => {
+                  } else {
                     setWorking(false);
-                  });
-              } else {
-                toast.error("Trnasction failed!");
-                //update item with token id
-                axios
-                  .post(`${config.API_URL}api/item/deleteOne`, {
-                    itemId: newItemId,
-                    ownerId: currentUsr._id || "",
-                  })
-                  .then((response) => {})
-                  .catch((error) => {});
+                    axios
+                      .post(`${config.API_URL}api/item/deleteOne`, {
+                        itemId: newItemId,
+                        ownerId: currentUsr._id || "",
+                      })
+                      .then((response) => {})
+                      .catch((error) => {});
+                    console.log("Failed in put on sale : " + ret.message);
+                    toast.error("Failed in token deployment");
+                    return;
+                  }
+                } else {
+                  setWorking(false);
+                  toast.success(
+                    <div>
+                      Successfully created an item. You can see items at{" "}
+                      <span
+                        style={{ color: "#00f" }}
+                        onClick={() =>
+                          navigate(`/collectionItems/${params.collectionId}`)
+                        }
+                      >
+                        here
+                      </span>
+                    </div>
+                  );
+
+                  navigate("/page-author/" + currentUsr?._id);
+                }
+                //-------------upper codes are for evm-------------------
+              }
+              if (currentNetworkSymbol === PLATFORM_NETWORKS.COREUM) {
+                let colllectionInfo = await collectionConfig(selected.address);
+                let unusedTokenId = colllectionInfo.unused_token_id;
+                let balanceCheck = await checkNativeCurrencyAndTokenBalances(0);
+                if (balanceCheck == false) {
+                  axios
+                    .post(`${config.API_URL}api/item/deleteOne`, {
+                      itemId: newItemId,
+                      ownerId: currentUsr._id || "",
+                    })
+                    .then((response) => {})
+                    .catch((error) => {});
+                  return;
+                }
+                const txHash = await mintNFT(
+                  currentUsr.address,
+                  selected.address,
+                  params.itemName,
+                  "ipfs://" + params.metadataURI
+                );
+                if (txHash != -1) {
+                  //update item with token id
+                  await axios
+                    .post(`${config.API_URL}api/item/updateTokenId`, {
+                      itemId: newItemId,
+                      tokenId: unusedTokenId,
+                    })
+                    .then((response) => {
+                      setWorking(false);
+                      if (response.data.code == 0)
+                        toast.success(
+                          <div>
+                            Successfully created an item. You can see items at{" "}
+                            <span
+                              style={{ color: "#00f" }}
+                              onClick={() =>
+                                navigate(
+                                  `/collectionItems/${params.collectionId}`
+                                )
+                              }
+                            >
+                              here
+                            </span>
+                          </div>
+                        );
+                      navigate("/page-author/" + currentUsr?._id);
+                    })
+                    .catch((error) => {
+                      setWorking(false);
+                    });
+                } else {
+                  toast.error("Trnasction failed!");
+                  //update item with token id
+                  axios
+                    .post(`${config.API_URL}api/item/deleteOne`, {
+                      itemId: newItemId,
+                      ownerId: currentUsr._id || "",
+                    })
+                    .then((response) => {})
+                    .catch((error) => {});
+                }
               }
             } catch (err: any) {
               setWorking(false);
@@ -533,6 +599,12 @@ const PageUploadItem: FC<PageUploadItemProps> = ({ className = "" }) => {
         return;
       }
     }
+    if (isSupportedNetwork(currentNetworkSymbol) === false) {
+      toast.warn(
+        "Please connect your wallet to a network we support and try again."
+      );
+      return;
+    }
     if (isEmpty(currentUsr)) {
       toast.warn("You have to sign in before doing a trading.");
       return;
@@ -610,6 +682,7 @@ const PageUploadItem: FC<PageUploadItemProps> = ({ className = "" }) => {
       if (fileCategory == FILE_TYPE.VIDEO)
         toast.info("Video file is uploaded.");
       if (fileCategory == FILE_TYPE.THREED) toast.info("3D file is uploaded.");
+
       let paths = [],
         idx = 0;
       for (idx = 0; idx < stockAmount; idx++) paths.push(fileHash);
@@ -631,8 +704,9 @@ const PageUploadItem: FC<PageUploadItemProps> = ({ className = "" }) => {
         mutiPaths: paths,
         timeLength: timeLength,
         stockGroupId: new Date().getTime(),
-        chainId: currentChainId || 1,
+        chainId: currentNetworkSymbol || 0,
         metadataURI: uriHash,
+        networkSymbol: currentNetworkSymbol || 0,
       };
       await saveItem(params);
     } catch (error) {
@@ -669,6 +743,10 @@ const PageUploadItem: FC<PageUploadItemProps> = ({ className = "" }) => {
         toast.warn("Audio file size should be less than 100MB.");
         return;
       }
+      const metadata = await parseBlob(file);
+      let tl = metadata.format.duration;
+      console.log("timeLength ===> ", tl);
+      setTimeLength(tl);
     }
     if (fileCategory == FILE_TYPE.VIDEO) {
       if (file.size > 100 * 1024 * 1024) {
@@ -677,25 +755,6 @@ const PageUploadItem: FC<PageUploadItemProps> = ({ className = "" }) => {
         toast.warn("Video file size should be less than 100MB");
         return;
       }
-      let reader1 = new FileReader();
-      reader1.readAsDataURL(file);
-      reader1.onload = () => {
-        var videoElement = document.createElement("video");
-        videoElement.src = file.name;
-        var timer = setInterval(function () {
-          if (videoElement.readyState === 4) {
-            console.log(
-              "The duration is: " +
-                videoElement.duration.toFixed(2) +
-                " seconds"
-            );
-            clearInterval(timer);
-          }
-        }, 500);
-      };
-      reader1.onerror = function (error: any) {
-        console.log("music file choosing error : ", error);
-      };
     }
 
     setSelectedMusicFile(file);
@@ -763,10 +822,12 @@ const PageUploadItem: FC<PageUploadItemProps> = ({ className = "" }) => {
                 <h3 className="text-lg font-semibold sm:text-2xl">
                   {fileCategory === FILE_TYPE.IMAGE
                     ? "Image file"
-                    : "Preview image"}
+                    : "Preview image or video"}
                 </h3>
                 <span className="text-sm text-neutral-500 dark:text-neutral-400">
-                  File types supported: PNG, JPEG, GIF, WEBP
+                  {fileCategory === FILE_TYPE.IMAGE
+                    ? "File types supported: PNG, JPEG, GIF, WEBP"
+                    : "File types supported: PNG, JPEG, GIF, WEBP, MP4"}
                 </span>
                 <div className="mt-5 ">
                   <div className="relative flex justify-center px-6 pt-5 pb-6 mt-1 border-2 border-dashed border-neutral-300 dark:border-neutral-6000 rounded-xl">
@@ -789,22 +850,33 @@ const PageUploadItem: FC<PageUploadItemProps> = ({ className = "" }) => {
                         <span className="text-green-500">
                           {fileCategory === FILE_TYPE.IMAGE
                             ? "Upload a image file"
-                            : "Upload a preview image"}
+                            : "Upload a preview image or video"}
                         </span>
                         <label
                           htmlFor="file-upload2"
                           className="font-medium rounded-md cursor-pointer text-primary-6000 transition hover:text-primary-500 hover:bg-black/5 absolute top-0 left-0 w-full h-full"
                         >
-                          <input
-                            id="file-upload2"
-                            name="file-upload2"
-                            type="file"
-                            className="sr-only"
-                            accept=".png,.jpeg,.jpg,.gif,.webp"
-                            onChange={changeFile}
-                          />
+                          {fileCategory === FILE_TYPE.IMAGE ? (
+                            <input
+                              id="file-upload2"
+                              name="file-upload2"
+                              type="file"
+                              className="sr-only"
+                              accept=".png,.jpeg,.jpg,.gif,.webp"
+                              onChange={changeFile}
+                            />
+                          ) : (
+                            <input
+                              id="file-upload2"
+                              name="file-upload2"
+                              type="file"
+                              className="sr-only"
+                              accept=".png,.jpeg,.jpg,.gif,.webp,.mp4"
+                              onChange={changeFile}
+                            />
+                          )}
                         </label>
-                        <p className="pl-1">or drag and drop</p>
+                        {/* <p className="pl-1">or drag and drop</p> */}
                       </div>
                       <p className="text-xs text-neutral-500 dark:text-neutral-400">
                         {!selectedFile ? "Max 100MB." : selectedFileName}
@@ -871,7 +943,7 @@ const PageUploadItem: FC<PageUploadItemProps> = ({ className = "" }) => {
                               onChange={changeMusicFile}
                             />
                           </label>
-                          <p className="pl-1">or drag and drop</p>
+                          {/* <p className="pl-1">or drag and drop</p> */}
                         </div>
                         <p className="text-xs text-neutral-500 dark:text-neutral-400">
                           {!selectedMusicFile
@@ -894,10 +966,8 @@ const PageUploadItem: FC<PageUploadItemProps> = ({ className = "" }) => {
                 label="Description"
                 desc={
                   <div>
-                    The description will be included on the nft's detail page
-                    underneath its image.{" "}
-                    <span className="text-green-500">Markdown</span> syntax is
-                    supported.
+                    The description will be included on the nft's detail page, 
+                    underneath its image.
                   </div>
                 }
               >
@@ -931,7 +1001,7 @@ const PageUploadItem: FC<PageUploadItemProps> = ({ className = "" }) => {
                   <RadioGroup.Label className="sr-only">
                     Server size
                   </RadioGroup.Label>
-                  <div className="flex py-2 space-x-4 overflow-auto customScrollBar">
+                  <div className="flex py-2 space-x-4 overflow-auto customScrollBar pl-3">
                     {colls.map((plan, index) => (
                       <RadioGroup.Option
                         key={index}
@@ -939,7 +1009,7 @@ const PageUploadItem: FC<PageUploadItemProps> = ({ className = "" }) => {
                         className={({ active, checked }) =>
                           `${
                             active
-                              ? "ring-2 ring-offset-2 ring-offset-sky-300 ring-white ring-opacity-60"
+                              ? "ring-2 ring-offset-2 ring-offset-sky-300 ring-white ring-opacity-60 "
                               : ""
                           }
                         ${
@@ -963,7 +1033,7 @@ const PageUploadItem: FC<PageUploadItemProps> = ({ className = "" }) => {
                                       <NcImage
                                         containerClassName="aspect-w-1 aspect-h-1 rounded-full overflow-hidden"
                                         src={`${config.API_URL}uploads/${
-                                          plan?.bannerURL || ""
+                                          plan?.logoURL || ""
                                         }`}
                                       />
                                     </RadioGroup.Description>
@@ -979,7 +1049,7 @@ const PageUploadItem: FC<PageUploadItemProps> = ({ className = "" }) => {
                                       checked ? "text-white" : ""
                                     }`}
                                   >
-                                    {plan?.name || ""}
+                                    {plan?.name.substring(0, 10) + "..." || ""}
                                   </RadioGroup.Label>
                                 </div>
                               </div>

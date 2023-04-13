@@ -15,42 +15,36 @@ const ModalEdit: FC<ModalEditProps> = ({ show, onOk, onCloseModalEdit }) => {
   const [price, setPrice] = useState(0);
   const regularInputTestRegExp = /^([0-9]+([.][0-9]*)?|[.][0-9]+)$/gm;
 
-  const onChangePrice = (e) =>
-  {
-    var inputedPrice = e.target.value;    
-    if(inputedPrice !== "") 
-    {
-      let m; let correct = false;
-      while ((m = regularInputTestRegExp.exec(inputedPrice)) !== null) 
-      {
+  const onChangePrice = (e) => {
+    var inputedPrice = e.target.value;
+    if (inputedPrice !== "") {
+      let m;
+      let correct = false;
+      while ((m = regularInputTestRegExp.exec(inputedPrice)) !== null) {
         if (m.index === regularInputTestRegExp.lastIndex) {
           regularInputTestRegExp.lastIndex++;
         }
-        if(m[0] === inputedPrice) 
-        {
+        if (m[0] === inputedPrice) {
           correct = true;
-        }         
-      }      
-      if(!correct)         
-      {
+        }
+      }
+      if (!correct) {
         return;
       }
-    }        
-    if(isNaN(inputedPrice))
-    {
+    }
+    if (isNaN(inputedPrice)) {
       return;
     }
     setPrice(inputedPrice);
-  }
+  };
 
   const onContinue = () => {
-    if(isNaN(price) || Number(price) < 0.00001)
-    {
+    if (isNaN(price) || Number(price) < 0.00001) {
       setPrice(0.00001);
       return;
     }
     onOk(price);
-  }
+  };
 
   // useEffect(() => {
   //   if (show) {
@@ -75,20 +69,30 @@ const ModalEdit: FC<ModalEditProps> = ({ show, onOk, onCloseModalEdit }) => {
         </h3>
         <span className="text-sm">Are you sure you want to change price?</span>
         <div className="mt-8 relative rounded-md shadow-sm">
-          <Input ref={textareaRef} defaultValue={"1.000"} type={"text"} 
-            value= {price || ""}
-            onChange = { (e) => onChangePrice(e) }
+          <Input
+            ref={textareaRef}
+            defaultValue={"1.000"}
+            type={"text"}
+            value={price || ""}
+            onChange={(e) => onChangePrice(e)}
           />
 
           <div className="absolute inset-y-0 right-0 flex items-center pr-2">
             <label htmlFor="currency" className="sr-only">
               Currency
             </label>
-            RIZE
+            USD
           </div>
         </div>
         <div className="mt-4 space-x-3">
-          <ButtonPrimary type="button" onClick={()=>{onContinue()}}>Submit</ButtonPrimary>
+          <ButtonPrimary
+            type="button"
+            onClick={() => {
+              onContinue();
+            }}
+          >
+            Submit
+          </ButtonPrimary>
           <ButtonSecondary type="button" onClick={onCloseModalEdit}>
             Cancel
           </ButtonSecondary>

@@ -1,7 +1,11 @@
+import React from "react";
 import Logo from "shared/Logo/Logo";
+import { Link } from "react-router-dom";
 import SocialsList1 from "shared/SocialsList1/SocialsList1";
 import { CustomLink } from "data/types";
-import React from "react";
+import Label from "components/Label/Label";
+import Input from "shared/Input/Input";
+import ButtonPrimary from "shared/Button/ButtonPrimary";
 
 export interface WidgetFooterMenu {
   id: string;
@@ -87,11 +91,68 @@ const Footer: React.FC = () => {
   };
 
   return (
-    <div className="nc-Footer relative border-t border-neutral-200 dark:border-neutral-600 pb-10 pt-0">
+    <div className="nc-Footer relative dark:bg-[#131313] pt-0 pb-4">
       <div className="container">
-        <div className="flex flex-col items-center justify-center">
-          <Logo className="w-60 md:w-72 py-8" />
-          <SocialsList1 className="flex items-center gap-3 sm:gap-5 md:gap-8 lg:gap-8" />
+        <div className="flex flex-col md:flex-row items-center md:items-end justify-center md:justify-between pb-4 border-b border-neutral-200 dark:border-neutral-600">
+          <div className="flex flex-col">
+            <div className="flex items-end pt-6 pb-4 gap-4">
+              <Logo className="w-40" />
+              <p className="text-gray-700 h-full">Gather, Create, Evolve</p>
+            </div>
+            <div className="flex">
+              <Link
+                to={"/"}
+                className="inset-0 -ml-2 py-2 px-4 dark:text-white text-neutral-900 text-sm transition cursor-pointer duration-150 ease-in-out rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-700"
+              >
+                Dashboard
+              </Link>
+              <Link
+                to={"/"}
+                className="inset-0 py-2 px-4 dark:text-white text-neutral-900 text-sm transition cursor-pointer duration-150 ease-in-out rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-700"
+              >
+                Swap
+              </Link>
+              <Link
+                to={"/"}
+                className="inset-0 py-2 px-4 dark:text-white text-neutral-900 text-sm transition cursor-pointer duration-150 ease-in-out rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-700"
+              >
+                Pool
+              </Link>
+            </div>
+            <SocialsList1 className="flex items-center gap-3 sm:gap-5 md:gap-8 lg:gap-8 pt-4" />
+          </div>
+          <div className="flex">
+            <div className="mt-2">
+              <Label>Join our newsletter</Label>
+              <div className="mt-1.5 flex gap-4">
+                <Input
+                  className="!border-[#33FF00]"
+                  placeholder="Enter your Email"
+                  sizeClass="h-11 px-4 h-[45px]"
+                />
+                <ButtonPrimary className="rounded-xl h-[45px]" >Send</ButtonPrimary>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div className="flex justify-between py-2 items-center">
+          <p className="mb-0">2023 Rize. All rights reserved</p>
+          <div className="flex gap-2">
+            <a
+              target="_blank"
+              href={"https://app.termly.io/document/terms-and-conditions/8654259c-7bb6-4800-bfad-813417b2c74c"}
+              className="inset-0 py-2 px-4 dark:text-white text-neutral-900 text-sm transition cursor-pointer duration-150 ease-in-out rounded-lg"
+            >
+              Terms
+            </a>
+            <a
+              target="_blank"
+              href={"https://app.termly.io/document/privacy-policy/ba02f494-1ec5-4fde-a984-c32853f78c91"}
+              className="inset-0 py-2 px-4 dark:text-white text-neutral-900 text-sm transition cursor-pointer duration-150 ease-in-out rounded-lg"
+            >
+              Privacy Policy
+            </a>
+          </div>
         </div>
         {/* {widgetMenus.map(renderWidgetMenuItem)} */}
       </div>

@@ -9,19 +9,24 @@ import ItemTypeImageIcon from "./ItemTypeImageIcon";
 import LikeButton from "./LikeButton";
 import Prices from "./Prices";
 import { ClockIcon } from "@heroicons/react/outline";
-import ItemTypeVideoIcon from "./ItemTypeVideoIcon";
-import { selectCurrentUser } from "app/reducers/auth.reducers";
+import NetworkLogo from "./NetworkLogo";
+import {
+  selectCurrentNetworkSymbol,
+  selectCurrentUser,
+} from "app/reducers/auth.reducers";
 import CardFlip from "react-card-flip";
 import { useAppSelector } from "app/hooks";
 import { isEmpty } from "app/methods";
 import axios from "axios";
 import { toast } from "react-toastify";
-import { config } from "app/config.js";
+import { ACTIVE_CHAINS, config, PLATFORM_NETWORKS } from "app/config.js";
 import { NFT_EFFECT } from "./EffectListBox";
 import TileEffect from "./TileEffect/TileEffect";
 import { getSystemTime } from "utils/utils";
 import defaultAvatar from "images/default_avatar.png";
 import { useDispatch } from "react-redux";
+import { isSupportedEVMNetwork } from "InteractWithSmartContract/interact";
+import PricesUnit from "./PricesUnit";
 
 export interface CardNFTProps {
   className?: string;
@@ -29,15 +34,17 @@ export interface CardNFTProps {
   item?: any;
   hideHeart?: boolean;
   effect?: NFT_EFFECT;
+  isHome?: boolean;
 }
 
 const CardNFT: FC<CardNFTProps> = (props: any) => {
+  const currentNetworkSymbol = useAppSelector(selectCurrentNetworkSymbol);
+  const currentUsr = useAppSelector(selectCurrentUser);
   const [className, setClassName] = useState("");
   const [isLiked, setIsLiked] = useState(false);
   const [nftItem, setNftItem] = useState({});
   const [hideFav, setHideFav] = useState(props?.hideHeart || false);
   const [isFlipped, setFlipped] = useState(false);
-  const currentUsr = useAppSelector(selectCurrentUser);
   const [timeLeft, setTimeLeft] = useState({});
   const [sysTime, setSysTime] = useState(0);
   const [refresh, setRefresh] = useState(false);
@@ -87,7 +94,7 @@ const CardNFT: FC<CardNFTProps> = (props: any) => {
             setNftItem(result.data.data);
             checkIsLiked(result.data.data);
           })
-          .catch(() => { });
+          .catch(() => {});
       });
   };
 
@@ -194,7 +201,9 @@ const CardNFT: FC<CardNFTProps> = (props: any) => {
   const renderView = () => {
     return (
       <div
-        className={`nc-CardNFT z-10 m-auto relative flex flex-col group [ nc-box-has-hover nc-dark-box-bg-has-hover ] ${className}`}
+        className={`nc-CardNFT z-10 m-auto relative flex flex-col group [ nc-box-has-hover nc-dark-box-bg-has-hover ] ${
+          props?.isHome ? "!border-[#22c55e]" : ""
+        } ${className}`}
         data-nc-id="CardNFT"
       >
         <div className="relative flex-shrink-0 ">
@@ -241,85 +250,80 @@ const CardNFT: FC<CardNFTProps> = (props: any) => {
                   : navigate("/nft-detail");
               }}
             >
-              {(nftItem as any)?.name || ""}
+              {((nftItem as any)?.name || "").toString().length > 15
+                ? ((nftItem as any)?.name || "").toString().substring(0, 15) +
+                  "..."
+                : ((nftItem as any)?.name || "").toString()}
             </h2>
-            <div>
-              {!isEmpty((nftItem as any).owner) && (
-                <div
-                  onClick={() =>
-                    navigate(
-                      `/page-author/${(nftItem as any)?.owner?._id || "1"}`
-                    )
-                  }
-                >
-                  <Avatar
-                    imgUrl={
-                      (nftItem as any)?.owner?.avatar
-                        ? `${config.API_URL}uploads/${(nftItem as any)?.owner.avatar
-                        }`
-                        : defaultAvatar
+            <div className="flex justify-between gap-2">
+              <div>
+                {!isEmpty((nftItem as any).owner) && (
+                  <div
+                    onClick={() =>
+                      navigate(
+                        `/page-author/${(nftItem as any)?.owner?._id || "1"}`
+                      )
                     }
-                    sizeClass="w-8 h-8 sm:w-8 sm:h-8"
-                  />
+                  >
+                    <Avatar
+                      imgUrl={
+                        (nftItem as any)?.owner?.avatar
+                          ? `${config.API_URL}uploads/${
+                              (nftItem as any)?.owner.avatar
+                            }`
+                          : defaultAvatar
+                      }
+                      sizeClass="w-8 h-8 sm:w-8 sm:h-8"
+                    />
+                  </div>
+                )}
+              </div>
+              {/* <span className="text-neutral-700 dark:text-neutral-400 text-xs">
+                {(nftItem as any)?.stockAmount ? (nftItem as any).stockAmount : 1} in stock
+              </span> */}
+              <NetworkLogo
+                networkSymbol={
+                  (nftItem as any)?.networkSymbol || PLATFORM_NETWORKS.COREUM
+                }
+                className=""
+              />
+            </div>
+          </div>
+          {!props?.isHome && (
+            <div className="w-2d4 w-full border-b border-neutral-100 dark:border-neutral-600"></div>
+          )}
+          {!props?.isHome && (
+            <div className="flex justify-between items-end ">
+              <Prices
+                labelTextClassName="bg-white dark:bg-[#191818] dark:group-hover:bg-[#202020] group-hover:bg-neutral-50"
+                labelText={
+                  (nftItem as any)?.isSale == 2
+                    ? (nftItem as any)?.bids && (nftItem as any).bids.length > 0
+                      ? "Current Bid"
+                      : "Start price"
+                    : (nftItem as any)?.isSale == 1
+                    ? "Sale Price"
+                    : "Price"
+                }
+                item={nftItem}
+              />
+              {(nftItem as any)?.isSale == 2 && (
+                <div className="flex items-center text-sm text-neutral-500 dark:text-neutral-400">
+                  <ClockIcon className="w-4 h-4" />
+                  {auctionEnded ? (
+                    <span className="ml-1 mt-0.5">Expried</span>
+                  ) : (
+                    <span className="ml-1 mt-0.5">
+                      {(timeLeft as any)?.days || 0} :{" "}
+                      {(timeLeft as any)?.hours || 0} :{" "}
+                      {(timeLeft as any)?.minutes || 0} :{" "}
+                      {(timeLeft as any)?.seconds || 0}
+                    </span>
+                  )}
                 </div>
               )}
             </div>
-            {/* <span className="text-neutral-700 dark:text-neutral-400 text-xs">
-                {(nftItem as any)?.stockAmount ? (nftItem as any).stockAmount : 1} in stock
-              </span> */}
-          </div>
-          <div className="w-2d4 w-full border-b border-neutral-100 dark:border-neutral-600"></div>
-
-          <div className="flex justify-between items-end ">
-            <Prices
-              labelTextClassName="bg-white dark:bg-[#191818] dark:group-hover:bg-[#202020] group-hover:bg-neutral-50"
-              labelText={
-                (nftItem as any)?.isSale == 2
-                  ? (nftItem as any)?.bids && (nftItem as any).bids.length > 0
-                    ? "Current Bid"
-                    : "Start price"
-                  : (nftItem as any)?.isSale == 1
-                    ? "Sale Price"
-                    : "Price"
-              }
-              price={
-                (nftItem as any)?.isSale == 2
-                  ? `${(nftItem as any)?.bids &&
-                    (nftItem as any)?.bids.length > 0
-                    ? (nftItem as any)?.bids[
-                      (nftItem as any)?.bids.length - 1
-                    ].price
-                      ? (nftItem as any)?.bids[
-                        (nftItem as any)?.bids.length - 1
-                      ].price
-                      : 0
-                    : (nftItem as any)?.price
-                  } 
-                      RIZE 
-                    `
-                  : (nftItem as any)?.isSale == 1
-                    ? `${(nftItem as any)?.price || 0} 
-                        RIZE
-                      `
-                    : "Not Listed"
-              }
-            />
-            {(nftItem as any)?.isSale == 2 && (
-              <div className="flex items-center text-sm text-neutral-500 dark:text-neutral-400">
-                <ClockIcon className="w-4 h-4" />
-                {auctionEnded ? (
-                  <span className="ml-1 mt-0.5">Expried</span>
-                ) : (
-                  <span className="ml-1 mt-0.5">
-                    {(timeLeft as any)?.days || 0} :{" "}
-                    {(timeLeft as any)?.hours || 0} :{" "}
-                    {(timeLeft as any)?.minutes || 0} :{" "}
-                    {(timeLeft as any)?.seconds || 0}
-                  </span>
-                )}
-              </div>
-            )}
-          </div>
+          )}
         </div>
       </div>
     );
@@ -355,8 +359,9 @@ const CardNFT: FC<CardNFTProps> = (props: any) => {
                   <span>Collection:</span>
                   <div className="flex flex-row gap-4 items-center">
                     <Avatar
-                      imgUrl={`${config.API_URL}uploads/${(nftItem as any)?.collection_id?.logoURL
-                        }`}
+                      imgUrl={`${config.API_URL}uploads/${
+                        (nftItem as any)?.collection_id?.logoURL
+                      }`}
                       sizeClass="w-8 h-8 sm:w-9 sm:h-9"
                     />
                     <span>{(nftItem as any)?.collection_id?.name}</span>
@@ -366,8 +371,9 @@ const CardNFT: FC<CardNFTProps> = (props: any) => {
                   <span>Owner:</span>
                   <div className="flex flex-row gap-4 items-center">
                     <Avatar
-                      imgUrl={`${config.API_URL}uploads/${(nftItem as any)?.owner?.avatar
-                        }`}
+                      imgUrl={`${config.API_URL}uploads/${
+                        (nftItem as any)?.owner?.avatar
+                      }`}
                       sizeClass="w-8 h-8 sm:w-9 sm:h-9"
                     />
                     <span>{(nftItem as any)?.owner?.username}</span>
@@ -377,8 +383,9 @@ const CardNFT: FC<CardNFTProps> = (props: any) => {
                   <span>Creator:</span>
                   <div className="flex flex-row gap-4 items-center">
                     <Avatar
-                      imgUrl={`${config.API_URL}uploads/${(nftItem as any)?.creator?.avatar
-                        }`}
+                      imgUrl={`${config.API_URL}uploads/${
+                        (nftItem as any)?.creator?.avatar
+                      }`}
                       sizeClass="w-8 h-8 sm:w-9 sm:h-9"
                     />
                     <span>{(nftItem as any)?.creator?.username}</span>

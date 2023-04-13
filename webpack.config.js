@@ -1,6 +1,10 @@
+const nodeExternals = require("webpack-node-externals");
+
 module.exports = (config, context) => {
   return {
     ...config,
+    target: "node",
+    externals: [nodeExternals()],
     node: {
       global: true,
     },
@@ -8,7 +12,7 @@ module.exports = (config, context) => {
       rules: [
         {
           test: /\.s[ac]ss$/i,
-          enforce: 'pre',
+          enforce: "pre",
           use: [
             "style-loader",
             "css-loader",
@@ -19,7 +23,7 @@ module.exports = (config, context) => {
                 implementation: require("sass"),
               },
             },
-            "source-map-loader"
+            "source-map-loader",
           ],
         },
       ],

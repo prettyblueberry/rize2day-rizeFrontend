@@ -19,10 +19,6 @@ const VideoForNft: FC<VideoForNftProps> = ({
   const currentMediaRunning = useAppSelector(selectCurrentMediaRunning);
   const [show, setShow] = useState(false);
 
-  useEffect(() => {
-    console.log("VideoForNft() src ==> ", src);
-  }, [src]);
-
   const IS_PLAY =
     currentMediaRunning.nftId === nftId &&
     currentMediaRunning.state === "playing";
