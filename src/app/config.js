@@ -2,9 +2,9 @@ const devnet = false;
 export const config = {
   bunnyURL: "https://storage.bunnycdn.com/ ",
   ipfsGateway: "https://silver-rapid-shrimp-610.mypinata.cloud/ipfs/",
-  socketUrl: "http://192.168.125.246:5000",
-  baseUrl: "http://192.168.125.246:5000/api/",
-  API_URL: "http://192.168.125.246:5000/",
+  socketUrl: "https://rize2day.com",
+  baseUrl: "https://rize2day.com/api/",
+  API_URL: "https://rize2day.com/",
   RPC_URL: devnet
     ? "https://rize2day.com/cosmwasm/"
     : "https://rize2day.com/cosmwasm/", //'https://rpc-test.coreum.hexskrt.net/',
