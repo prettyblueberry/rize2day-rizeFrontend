@@ -41,6 +41,8 @@ const queryClient = new QueryClient({
 
 const chainInfoQueryKey = "@chain-info";
 
+// const wallet_type = "leap";
+
 const unsafelyReadChainInfoCache = () =>
   queryClient.getQueryCache().find(chainInfoQueryKey)?.state?.data;
 
@@ -62,6 +64,26 @@ const unsafelyGetDefaultExecuteFee = () => {
 
   return getDefaultExecuteFee(chainInfo.feeCurrencies);
 };
+
+const getWalletProvider = (wallet_type) => {
+
+  let provider = null;
+  switch (wallet_type) {
+    case "keplr":
+      if (window.keplr) provider = window.keplr;
+      break;
+    case "leap":
+      if (window.leap) provider = window.leap;
+      break;
+    case "cosmostation":
+      if (window.cosmostation) provider = window.cosmostation.providers.keplr;
+      break;
+    default:
+      break;
+  }
+
+  return provider;
+}
 
 async function getKeplr() {
   if (window.keplr) {
@@ -115,41 +137,64 @@ export const SigningCosmWasmProvider = ({ children }) => {
     }
   };
 
-  const connectWallet = async (new_config = null) => {
-    const keplr = await getKeplr();
+  const connectWallet = async (wallet_type, new_config = null) => {
+    const provider = await getWalletProvider(wallet_type);
     let walletConfig = chainConfig;
     if (!isEmpty(new_config)) {
-      walletConfig = new_config;
+      walletConfig = new_config; 
     }
 
-    if (!window.getOfflineSigner || !window.keplr || !keplr) {
-      alert("Please install keplr to continue.");
-      window.open("https://www.keplr.app/", "_blank");
+    if (provider == null) {
+      alert(`Please ${wallet_type} wallet to continue.`);
+      switch (wallet_type) {
+        case "keplr":
+          window.open("https://www.keplr.app/", "_blank");
+          break;
+        case "leap":
+          window.open("https://leapwallet.io/", "_blank");
+          break;
+        case "cosmostation":
+          window.open("https://cosmostation.io/", "_blank");
+          break;
+        default: break;
+      }
+
       return;
     } else {
-      if (window.keplr.experimentalSuggestChain) {
+      if (provider.experimentalSuggestChain) {
         try {
-          await window.keplr.experimentalSuggestChain(walletConfig);
+          await provider.experimentalSuggestChain(walletConfig);
         } catch (error) {
           console.log(error);
           toast.error("Failed to suggest the chain");
           return;
         }
+      // } else if(provider?.cosmos?.request) {
+      //   try {
+      //     await provider.cosmos.request({
+      //       method: "cos_addChain",
+      //       params: walletConfig,
+      //     });
+      //   } catch (error) {
+      //     console.log(error);
+      //     toast.error("Failed to add the chain");
+      //     return;
+      //   }
       } else {
-        toast.warn("Please use the recent version of keplr extension");
+        toast.warn("Please use the recent version of wallet extension");
         return;
       }
     }
 
     try {
-      await keplr.enable(walletConfig.chainId);
+      await provider.enable(walletConfig.chainId);
     } catch (err) {
       console.log(err);
       return;
     }
 
     try {
-      const offlineSigner = await window.keplr.getOfflineSigner(
+      const offlineSigner = await provider.getOfflineSigner(
         walletConfig.chainId
       );
       const tempClient = await SigningCosmWasmClient.connectWithSigner(
@@ -164,6 +209,7 @@ export const SigningCosmWasmProvider = ({ children }) => {
       dispatch(changeNetworkSymbol(PLATFORM_NETWORKS.COREUM));
       dispatch(changeWalletAddress(address));
       localStorage.setItem("address", address);
+      localStorage.setItem("wallet_type", wallet_type);
     } catch (err) {
       console.log("Connect Wallet: ", err);
       return;
@@ -173,6 +219,8 @@ export const SigningCosmWasmProvider = ({ children }) => {
   const disconnect = () => {
     if (signingClient) {
       localStorage.removeItem("address");
+      localStorage.removeItem("wallet_type");
+      localStorage.removeItem("walletconnect");
       signingClient.disconnect();
     }
     setWalletAddress("");

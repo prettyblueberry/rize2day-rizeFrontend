@@ -12,7 +12,7 @@ import axios from "axios";
 import jwt_decode from "jwt-decode";
 import md5 from "md5";
 import SearchAutocomplete from "./SearchAutocomplete";
-import { config, PLATFORM_NETWORKS } from "app/config.js";
+import { config, PLATFORM_NETWORKS, ACTIVE_CHAINS, RPC_URLs } from "app/config";
 import { useNavigate } from "react-router-dom";
 import { useAppDispatch, useAppSelector } from "app/hooks";
 import {
@@ -36,7 +36,7 @@ import {
   changeNetwork,
   getNetworkSymbolByChainId,
   isSupportedNetwork,
-  isSuppportedEVMChain,
+  isSuppportedEVMChain
 } from "InteractWithSmartContract/interact";
 import { toast } from "react-toastify";
 import {
@@ -45,7 +45,11 @@ import {
   changeMemberOrNot,
 } from "app/reducers/auth.reducers";
 
-export interface MainNav2LoggedProps {}
+import { WalletConnectConnector } from "@web3-react/walletconnect-connector";
+
+export const infura_Id = "84842078b09946638c03157f83405213";
+
+export interface MainNav2LoggedProps { }
 
 export const web3Modal = new Web3Modal({
   network: "mainnet",
@@ -74,6 +78,10 @@ const MainNav2Logged: FC<MainNav2LoggedProps> = () => {
   const [openState1, setOpenState1] = useState(false);
   const [openState2, setOpenState2] = useState(false);
   const [provider, setProvider] = useState(null);
+
+  let previousNetworkSymbol = currentNetworkSymbol;
+
+  const [activatingConnector, setActivatingConnector] = useState();
 
   useEffect(() => {
     if (!isEmpty(walletAddress)) {
@@ -126,17 +134,17 @@ const MainNav2Logged: FC<MainNav2LoggedProps> = () => {
   useEffect(() => {
     (async () => {
       try {
-        if (!signingClient && localStorage.getItem("address")) {
-          await connectToCoreum();
+        if (!signingClient && localStorage.getItem("address") && localStorage.getItem("wallet_type")) {
+          await connectToCoreum(localStorage.getItem("wallet_type"));
         }
       } catch (err) {
-        setTimeout(() => connectToCoreum(), 1000);
+        // setTimeout(() => connectToCoreum(), 1000);
       }
     })();
   }, [signingClient, connectToCoreum]);
 
-  const authenticate = async () => {
-    await connectToCoreum();
+  const authenticate = async (wallet_type) => {
+    await connectToCoreum(wallet_type);
   };
 
   let timeout1, timeout2; // NodeJS.Timeout
@@ -252,23 +260,62 @@ const MainNav2Logged: FC<MainNav2LoggedProps> = () => {
     }
   };
 
+  const handleWalletConnect = async () => {
+    try {
+      const walletconnect = new WalletConnectConnector({
+        rpc: RPC_URLs,
+        bridge: 'https://bridge.walletconnect.org',
+        qrcode: true,
+        infuraId: infura_Id,
+      });
+
+      let connector_update = await walletconnect.activate();
+
+      console.log("chain id:::::::::", connector_update.chainId);
+      if(RPC_URLs.keys.filter((item) => {if(item == connector_update.chainId) return true; else return false;}).length == 0) {
+        console.log("mismatch chain id:", connector_update.chainId);
+        walletconnect.deactivate();
+        localStorage.removeItem("walletconnect");
+        dispatch(changeWalletAddress(""));
+        return;
+      }
+
+      const provider = connector_update.provider;
+
+      const account = connector_update.account;
+
+      setProvider(provider);
+
+      dispatch(changeWalletAddress(account));
+      isCommunityMember(account);
+
+      dispatch(changeGlobalProvider(provider));
+    } catch (error) {
+      console.log(error);
+      dispatch(changeWalletAddress(""));
+    }
+  }
+
+  const handleMetaMask = async () => {
+    let switchingResult = await onClickChangeEVMNetwork(currentNetworkSymbol);
+    if (
+      switchingResult === false &&
+      isSupportedNetwork(previousNetworkSymbol) === true
+    ) {
+      handleSelectNetwork(previousNetworkSymbol);
+    }
+    if (switchingResult === true) onClickConnectEVMWallet();
+  }
+
   const handleSelectNetwork = async (networkSymbol) => {
-    let previousNetworkSymbol = currentNetworkSymbol;
+    previousNetworkSymbol = currentNetworkSymbol;
+
     if (networkSymbol === PLATFORM_NETWORKS.COREUM) {
-      await connectToCoreum();
-    } else if (networkSymbol === PLATFORM_NETWORKS.NEAR) {
-      disconnectFromCoreum();
+      // await connectToCoreum();
     } else {
       disconnectFromCoreum();
-      let switchingResult = await onClickChangeEVMNetwork(networkSymbol);
-      if (
-        switchingResult === false &&
-        isSupportedNetwork(previousNetworkSymbol) === true
-      ) {
-        handleSelectNetwork(previousNetworkSymbol);
-      }
-      if (switchingResult === true) onClickConnectEVMWallet();
     }
+    dispatch(changeNetworkSymbol(networkSymbol));
   };
 
   return (
@@ -595,7 +642,7 @@ const MainNav2Logged: FC<MainNav2LoggedProps> = () => {
                         : "hover:bg-neutral-100 dark:hover:bg-neutral-700",
                       "py-2 px-2 transition cursor-pointer duration-150 ease-in-out rounded-lg flex gap-2 items-center"
                     )}
-                    // onClick={() =>                       handleSelectNetwork(PLATFORM_NETWORKS.NEAR)                     }
+                  // onClick={() =>                       handleSelectNetwork(PLATFORM_NETWORKS.NEAR)                     }
                   >
                     <img
                       src="/images/icons/near.png"
@@ -615,7 +662,7 @@ const MainNav2Logged: FC<MainNav2LoggedProps> = () => {
                         : "hover:bg-neutral-100 dark:hover:bg-neutral-700",
                       "py-2 px-2 transition cursor-pointer duration-150 ease-in-out rounded-lg flex gap-2 items-center"
                     )}
-                    // onClick={() =>                       handleSelectNetwork(PLATFORM_NETWORKS.NEAR)                     }
+                  // onClick={() =>                       handleSelectNetwork(PLATFORM_NETWORKS.NEAR)                     }
                   >
                     <img
                       src="/images/icons/xrp2.png"
@@ -635,7 +682,7 @@ const MainNav2Logged: FC<MainNav2LoggedProps> = () => {
                         : "hover:bg-neutral-100 dark:hover:bg-neutral-700",
                       "py-2 px-2 transition cursor-pointer duration-150 ease-in-out rounded-lg flex gap-2 items-center"
                     )}
-                    // onClick={() =>                       handleSelectNetwork(PLATFORM_NETWORKS.NEAR)                     }
+                  // onClick={() =>                       handleSelectNetwork(PLATFORM_NETWORKS.NEAR)                     }
                   >
                     <img
                       src="/images/icons/atom.png"
@@ -655,7 +702,7 @@ const MainNav2Logged: FC<MainNav2LoggedProps> = () => {
                         : "hover:bg-neutral-100 dark:hover:bg-neutral-700",
                       "py-2 px-2 transition cursor-pointer duration-150 ease-in-out rounded-lg flex gap-2 items-center"
                     )}
-                    // onClick={() =>                       handleSelectNetwork(PLATFORM_NETWORKS.NEAR)                     }
+                  // onClick={() =>                       handleSelectNetwork(PLATFORM_NETWORKS.NEAR)                     }
                   >
                     <img
                       src="/images/icons/solana.png"
@@ -675,7 +722,7 @@ const MainNav2Logged: FC<MainNav2LoggedProps> = () => {
                         : "hover:bg-neutral-100 dark:hover:bg-neutral-700",
                       "py-2 px-2 transition cursor-pointer duration-150 ease-in-out rounded-lg flex gap-2 items-center"
                     )}
-                    // onClick={() =>                       handleSelectNetwork(PLATFORM_NETWORKS.NEAR)                     }
+                  // onClick={() =>                       handleSelectNetwork(PLATFORM_NETWORKS.NEAR)                     }
                   >
                     <img
                       src="/images/icons/hedera.png"
@@ -695,7 +742,7 @@ const MainNav2Logged: FC<MainNav2LoggedProps> = () => {
                         : "hover:bg-neutral-100 dark:hover:bg-neutral-700",
                       "py-2 px-2 transition cursor-pointer duration-150 ease-in-out rounded-lg flex gap-2 items-center"
                     )}
-                    // onClick={() =>                       handleSelectNetwork(PLATFORM_NETWORKS.NEAR)                     }
+                  // onClick={() =>                       handleSelectNetwork(PLATFORM_NETWORKS.NEAR)                     }
                   >
                     <img
                       src="/images/icons/tezos.png"
@@ -714,30 +761,140 @@ const MainNav2Logged: FC<MainNav2LoggedProps> = () => {
           </div>
         </div>
 
-        <ButtonPrimary
-          onClick={() => {
-            if (isSupportedNetwork(currentNetworkSymbol) === true) {
-              if (currentNetworkSymbol === PLATFORM_NETWORKS.COREUM)
-                authenticate();
-              else if (currentNetworkSymbol === PLATFORM_NETWORKS.NEAR) {
-                console.log("selected NEAR ");
+        <div className="relative dropdown">
+          <ButtonPrimary
+            onClick={() => {
+              if (isSupportedNetwork(currentNetworkSymbol) === true) {
+                if (currentNetworkSymbol === PLATFORM_NETWORKS.COREUM) {
+                  // authenticate();
+                }
+                else if (currentNetworkSymbol === PLATFORM_NETWORKS.NEAR) {
+                  console.log("selected NEAR ");
+                } else {
+                  // onClickConnectEVMWallet();
+                }
               } else {
-                onClickConnectEVMWallet();
+                toast.warn("Please select a network and try again.");
               }
-            } else {
-              toast.warn("Please select a network and try again.");
-            }
-          }}
-          sizeClass="px-4 py-2 sm:px-5"
-        >
-          <IoWalletOutline size={22} />
-          {isEmpty(walletAddress) === false && walletStatus === true ? (
-            <span className="pl-2">{getShortAddress(walletAddress)}</span>
-          ) : (
-            <span className="pl-2">Wallet connect</span>
-          )}
-        </ButtonPrimary>
-
+            }}
+            sizeClass="px-4 py-2 sm:px-5 my-2"
+          >
+            <IoWalletOutline size={22} />
+            {isEmpty(walletAddress) === false && walletStatus === true ? (
+              <span className="pl-2">{getShortAddress(walletAddress)}</span>
+            ) : (
+              <span className="pl-2">Wallet connect</span>
+            )}
+          </ButtonPrimary>
+          {currentNetworkSymbol === PLATFORM_NETWORKS.COREUM ?
+            <div className="dropdown-content !w-full">
+              <div className="overflow-hidden rounded-2xl shadow-lg ring-1 ring-black ring-opacity-5">
+                <div className="relative grid bg-white dark:bg-neutral-800 px-2 py-2">
+                  <div
+                    className="py-2 px-2 transition cursor-pointer duration-150 ease-in-out rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-700 flex gap-2 items-center"
+                    onClick={() => { authenticate("keplr"); }}
+                  >
+                    <img
+                      src="/images/icons/keplr.png"
+                      className="w-[25px] h-[25px]"
+                      width={25}
+                      height={25}
+                      alt=""
+                    ></img>
+                    <span className="dark:text-white text-neutral-900 text-sm">
+                      Keplr
+                    </span>
+                  </div>
+                  <div
+                    className="py-2 px-2 transition cursor-pointer duration-150 ease-in-out rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-700 flex gap-2 items-center"
+                    onClick={() => { authenticate("leap"); }}
+                  >
+                    <img
+                      src="/images/icons/leap.png"
+                      className="w-[25px] h-[25px]"
+                      width={25}
+                      height={25}
+                      alt=""
+                    ></img>
+                    <span className="dark:text-white text-neutral-900 text-sm">
+                      Leap
+                    </span>
+                  </div>
+                  <div
+                    className="py-2 px-2 transition cursor-pointer duration-150 ease-in-out rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-700 flex gap-2 items-center"
+                    onClick={() => { authenticate("cosmostation"); }}
+                  >
+                    <img
+                      src="/images/icons/cosmostation.png"
+                      className="w-[25px] h-[25px]"
+                      width={25}
+                      height={25}
+                      alt=""
+                    ></img>
+                    <span className="dark:text-white text-neutral-900 text-sm">
+                      Cosmostation
+                    </span>
+                  </div>
+                  <div
+                    className="py-2 px-2 transition cursor-pointer duration-150 ease-in-out rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-700 flex gap-2 items-center"
+                    onClick={() => { handleWalletConnect(); }}
+                  >
+                    <img
+                      src="/images/icons/walletconnect.png"
+                      className="w-[25px] h-[25px]"
+                      width={25}
+                      height={25}
+                      alt=""
+                    ></img>
+                    <span className="dark:text-white text-neutral-900 text-sm">
+                      WalletConnect
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div> :
+            <></>
+          }
+          {currentNetworkSymbol === PLATFORM_NETWORKS.ETHEREUM || currentNetworkSymbol === PLATFORM_NETWORKS.BSC || currentNetworkSymbol === PLATFORM_NETWORKS.POLYGON || currentNetworkSymbol === PLATFORM_NETWORKS.AVALANCHE ?
+            <div className="dropdown-content !w-full">
+              <div className="overflow-hidden rounded-2xl shadow-lg ring-1 ring-black ring-opacity-5">
+                <div className="relative grid bg-white dark:bg-neutral-800 px-2 py-2">
+                  <div
+                    className="py-2 px-2 transition cursor-pointer duration-150 ease-in-out rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-700 flex gap-2 items-center"
+                    onClick={() => { handleMetaMask(); }}
+                  >
+                    <img
+                      src="/images/icons/metamask.png"
+                      className="w-[25px] h-[25px]"
+                      width={25}
+                      height={25}
+                      alt=""
+                    ></img>
+                    <span className="dark:text-white text-neutral-900 text-sm">
+                      MetaMask
+                    </span>
+                  </div>
+                  <div
+                    className="py-2 px-2 transition cursor-pointer duration-150 ease-in-out rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-700 flex gap-2 items-center"
+                    onClick={() => { handleWalletConnect(); }}
+                  >
+                    <img
+                      src="/images/icons/walletconnect.png"
+                      className="w-[25px] h-[25px]"
+                      width={25}
+                      height={25}
+                      alt=""
+                    ></img>
+                    <span className="dark:text-white text-neutral-900 text-sm">
+                      WalletConnect
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div> :
+            <></>
+          }
+        </div>
         {!isEmpty(walletAddress) && <AvatarDropdown />}
 
         <div className="flex items-center space-x-3 lg:hidden">

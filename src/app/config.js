@@ -142,6 +142,18 @@ export const ipfsUrl = "https://ipfs.infura.io/ipfs/";
 export const platformContractAbi = require("../InteractWithSmartContract/RizeNFTFactory.json");
 export const nftContractAbi = require("../InteractWithSmartContract/nftContract-abi.json");
 
+export const RPC_URLs = {
+  1: "https://rpc.ankr.com/eth",
+  56: "https://bsc-dataseed1.binance.org/",
+  137: "https://polygon-rpc.com/",
+  43114: "https://avalanche-c-chain.publicnode.com",
+  421613: "https://goerli-rollup.arbitrum.io/rpc",
+  97: "https://data-seed-prebsc-1-s2.binance.org:8545/",
+  80001: "https://matic-mumbai.chainstacklabs.com",
+  43113: "https://api.avax-test.network/ext/bc/C/rpc",
+  "coreum-testnet-1": "https://rize2day.com/cosmwasm"
+}
+
 export const EVM_MAINNETS_LIST = {
   [PLATFORM_NETWORKS.ETHEREUM]: {
     name: "Ethereum Mainnet",

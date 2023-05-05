@@ -41,8 +41,9 @@ export default function AvatarDropdown() {
     await loadClient();
 
     let account = localStorage.getItem("address");
-    if (account) {
-      await connectWallet();
+    let wallet_type = localStorage.getItem("wallet_type");
+    if (account && wallet_type) {
+      await connectWallet(wallet_type);
     }
   };
 
@@ -68,6 +69,7 @@ export default function AvatarDropdown() {
     dispatch(changeWalletStatus(false));
     dispatch({ type: "LOGIN_OUT" });
     localStorage.removeItem("address");
+    localStorage.removeItem("wallet_type");
 
     navigate("/page-search");
   };
