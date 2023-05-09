@@ -41,8 +41,12 @@ const ThreeDForNft = ({ src = "" }) => {
 
   return (
     <>
-      <ambientLight intensity={0.6} color={"0xffffff"} />
-      <pointLight position={[10, 10, 10]} />
+      <directionalLight color={0xffffff} intensity={1} position={[0, 30, 0]} />
+      <directionalLight color={0xffffff} intensity={1} position={[0, 0, 10]} />
+      <directionalLight color={0xffffff} intensity={1} position={[0, 0, -10]} />
+      <directionalLight color={0xffffff} intensity={1} position={[30, 0, 0]} />
+      {/* <ambientLight intensity={0.6} color={"0xffffff"} />
+      <pointLight position={[10, 10, 10]} /> */}
 
       <Suspense fallback={<Loader />}>
         <primitive object={nscene} />
@@ -69,9 +73,8 @@ const NFT3Canvas = ({
   const renderContent = (newClass = "", content = true) => {
     return (
       <div
-        className={`${className} ${newClass} ${
-          IS_PLAY ? "" : "opacity-0 z-[-1]"
-        }`}
+        className={`${className} ${newClass} ${IS_PLAY ? "" : "opacity-0 z-[-1]"
+          }`}
       >
         <ErrorBoundary
           FallbackComponent={({ error }) => (
