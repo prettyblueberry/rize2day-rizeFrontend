@@ -5,8 +5,59 @@ import { selectCurrentMediaRunning } from "app/mediaRunning/mediaRunning";
 import { BiFullscreen } from "react-icons/bi";
 import { IconButton } from "@mui/material";
 import NcModal from "shared/NcModal/NcModal";
+<<<<<<< HEAD
 import ReactLoading from 'react-loading';
 import bgImg from '../images/3dbg.jpg';
+=======
+import * as THREE from "three";
+
+const Loader = () => {
+  const { active, progress, errors, item, loaded, total } = useProgress();
+
+  console.log("progress ===> ", progress);
+
+  return (
+    <Html className="text-black" center>
+      {progress} % loaded
+    </Html>
+  );
+};
+
+const ThreeDForNft = ({ src = "" }) => {
+  let nscene;
+  const mixerRef = useRef();
+
+  useFrame((_, delta) => {
+    mixerRef.current.update(delta);
+  });
+
+  const { scene, animations } = useLoader(GLTFLoader, src);
+  nscene = scene;
+  const mixer = new THREE.AnimationMixer(scene);
+  mixerRef.current = mixer;
+  animations.forEach((clip) => {
+    const action = mixer.clipAction(clip);
+    action.play();
+  });
+
+  return (
+    <>
+      <directionalLight color={0xffffff} intensity={1} position={[0, 30, 0]} />
+      <directionalLight color={0xffffff} intensity={1} position={[0, 0, 10]} />
+      <directionalLight color={0xffffff} intensity={1} position={[0, 0, -10]} />
+      <directionalLight color={0xffffff} intensity={1} position={[30, 0, 0]} />
+      {/* <ambientLight intensity={0.6} color={"0xffffff"} />
+      <pointLight position={[10, 10, 10]} /> */}
+
+      <Suspense fallback={<Loader />}>
+        <primitive object={nscene} />
+      </Suspense>
+
+      <OrbitControls />
+    </>
+  );
+};
+>>>>>>> 58bbbe64a173a5da7c530560c8d686a99badb47d
 
 const NFT3Canvas = ({
   nftId,
