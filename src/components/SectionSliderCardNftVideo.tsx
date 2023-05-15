@@ -19,40 +19,40 @@ const SectionSliderCardNftVideo: FC<SectionSliderCardNftVideoProps> = ({
   const id = useId();
   const UNIQUE_CLASS = "glidejs" + id.replace(/:/g, "_");
 
-  useEffect(() => {
-    if (!sliderRef.current) {
-      return;
-    }
+  // useEffect(() => {
+  //   if (!sliderRef.current) {
+  //     return;
+  //   }
 
-    const OPTIONS: Glide.Options = {
-      perView: 3,
-      gap: 32,
-      bound: true,
-      breakpoints: {
-        1280: {
-          gap: 28,
-          perView: 2.5,
-        },
-        1024: {
-          gap: 20,
-          perView: 2.3,
-        },
-        768: {
-          gap: 20,
-          perView: 1.5,
-        },
-        500: {
-          gap: 20,
-          perView: 1,
-        },
-      },
-    };
+  //   const OPTIONS: Glide.Options = {
+  //     perView: 3,
+  //     gap: 32,
+  //     bound: true,
+  //     breakpoints: {
+  //       1280: {
+  //         gap: 28,
+  //         perView: 2.5,
+  //       },
+  //       1024: {
+  //         gap: 20,
+  //         perView: 2.3,
+  //       },
+  //       768: {
+  //         gap: 20,
+  //         perView: 1.5,
+  //       },
+  //       500: {
+  //         gap: 20,
+  //         perView: 1,
+  //       },
+  //     },
+  //   };
 
-    let slider = new Glide(`.${UNIQUE_CLASS}`, OPTIONS);
-    slider.mount();
-    // @ts-ignore
-    return () => slider.destroy();
-  }, [sliderRef, UNIQUE_CLASS]);
+  //   let slider = new Glide(`.${UNIQUE_CLASS}`, OPTIONS);
+  //   slider.mount();
+  //   // @ts-ignore
+  //   return () => slider.destroy();
+  // }, [sliderRef, UNIQUE_CLASS]);
 
   return (
     <div className={`nc-SectionSliderCardNftVideo ${className}`}>

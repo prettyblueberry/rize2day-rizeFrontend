@@ -8,7 +8,6 @@ import FollowButton from "components/FollowButton";
 import { useAppSelector, useAppDispatch } from "app/hooks";
 import { selectCurrentUser } from "app/reducers/auth.reducers";
 import { useParams } from "react-router-dom";
-import { isEditable } from "@testing-library/user-event/dist/types/utils";
 import { isEmpty } from "app/methods";
 import { config } from "app/config";
 

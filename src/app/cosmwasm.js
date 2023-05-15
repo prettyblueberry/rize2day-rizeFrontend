@@ -5,6 +5,7 @@ import {
   CosmWasmClient,
   SigningCosmWasmClient,
 } from "@cosmjs/cosmwasm-stargate";
+import { coin } from "@cosmjs/launchpad";
 import { defaultRegistryTypes, SigningStargateClient } from "@cosmjs/stargate";
 import { encodePubkey, makeSignDoc, Registry } from "@cosmjs/proto-signing";
 import { encodeSecp256k1Pubkey } from "@cosmjs/amino/build/encoding";
@@ -40,8 +41,6 @@ const queryClient = new QueryClient({
 });
 
 const chainInfoQueryKey = "@chain-info";
-
-// const wallet_type = "leap";
 
 const unsafelyReadChainInfoCache = () =>
   queryClient.getQueryCache().find(chainInfoQueryKey)?.state?.data;
@@ -119,6 +118,8 @@ export const SigningCosmWasmProvider = ({ children }) => {
   const [signingClient, setSigningClient] = useState(null);
   const [walletAddress, setWalletAddress] = useState("");
   const [balances, setBalances] = useState({});
+  const [isOpenFilter, setOpenFilter] = useState(false);
+  const [cartCount, setCartCount] = useState(0);
   const dispatch = useAppDispatch();
 
   const MARKETPLACE = config.MARKETPLACE;
@@ -141,7 +142,7 @@ export const SigningCosmWasmProvider = ({ children }) => {
     const provider = await getWalletProvider(wallet_type);
     let walletConfig = chainConfig;
     if (!isEmpty(new_config)) {
-      walletConfig = new_config; 
+      walletConfig = new_config;
     }
 
     if (provider == null) {
@@ -169,17 +170,6 @@ export const SigningCosmWasmProvider = ({ children }) => {
           toast.error("Failed to suggest the chain");
           return;
         }
-      // } else if(provider?.cosmos?.request) {
-      //   try {
-      //     await provider.cosmos.request({
-      //       method: "cos_addChain",
-      //       params: walletConfig,
-      //     });
-      //   } catch (error) {
-      //     console.log(error);
-      //     toast.error("Failed to add the chain");
-      //     return;
-      //   }
       } else {
         toast.warn("Please use the recent version of wallet extension");
         return;
@@ -243,9 +233,7 @@ export const SigningCosmWasmProvider = ({ children }) => {
       });
       const result = resp.data.result;
       for (let i = 0; i < result.length; i++) {
-        balanceList[result[i].denom] = convertMicroDenomToDenom(
-          result[i].amount
-        );
+        balanceList[result[i].denom] = result[i].amount;
       }
       if (client) {
         const resp2 = await client.queryContractSmart(config.CW20_CONTRACT, {
@@ -494,7 +482,8 @@ export const SigningCosmWasmProvider = ({ children }) => {
           duration_type,
           initial_price,
           reserve_price,
-          denom: { cw20: config.CW20_CONTRACT },
+          // denom: { cw20: config.CW20_CONTRACT },
+          denom: denom,
         },
       };
       console.log(
@@ -557,9 +546,22 @@ export const SigningCosmWasmProvider = ({ children }) => {
     }
   };
 
-  const buyNowNFT = async (sender, collectionContract, token_id, denom) => {
+  const bidNFT = async (
+    sender,
+    collectionContract,
+    token_id,
+    denom,
+    amount
+  ) => {
     if (!signingClient) return -1;
     try {
+      console.log(
+        "bidNFT () ===> ",
+        sender,
+        collectionContract,
+        convertDenomToMicroDenom(amount),
+        denom
+      );
       const result = await signingClient.execute(
         sender,
         collectionContract,
@@ -570,7 +572,8 @@ export const SigningCosmWasmProvider = ({ children }) => {
           },
         },
         defaultFee,
-        undefined
+        undefined,
+        [coin(convertDenomToMicroDenom(amount), config.COIN_MINIMAL_DENOM)]
       );
       return result.transactionHash;
     } catch (error) {
@@ -692,6 +695,10 @@ export const SigningCosmWasmProvider = ({ children }) => {
         client,
         balances,
         signingClient,
+        isOpenFilter,
+        cartCount,
+        setOpenFilter,
+        setCartCount,
         loadClient,
         connectWallet,
         disconnect,
@@ -708,7 +715,7 @@ export const SigningCosmWasmProvider = ({ children }) => {
         burnNFT,
         listNFT,
         sendToken,
-        buyNowNFT,
+        bidNFT,
         acceptSaleNFT,
         cancelSaleNFT,
         transferNFT,

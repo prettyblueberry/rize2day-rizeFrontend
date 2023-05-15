@@ -46,41 +46,41 @@ const SectionSliderCollections2: FC<SectionSliderCollections2Props> = ({
     getPopularItems();
   }, []);
 
-  useEffect(() => {
-    if (!sliderRef.current) {
-      return;
-    }
+  // useEffect(() => {
+  //   if (!sliderRef.current) {
+  //     return;
+  //   }
 
-    const OPTIONS: Glide.Options = {
-      perView: 4,
-      gap: 20,
-      bound: true,
-      breakpoints: {
-        1280: {
-          gap: 28,
-          perView: 3,
-        },
-        1024: {
-          gap: 20,
-          perView: 2.15,
-        },
-        768: {
-          gap: 8,
-          perView: 2,
-        },
+  //   const OPTIONS: Glide.Options = {
+  //     perView: 4,
+  //     gap: 20,
+  //     bound: true,
+  //     breakpoints: {
+  //       1280: {
+  //         gap: 28,
+  //         perView: 3,
+  //       },
+  //       1024: {
+  //         gap: 20,
+  //         perView: 2.15,
+  //       },
+  //       768: {
+  //         gap: 8,
+  //         perView: 2,
+  //       },
 
-        500: {
-          gap: 20,
-          perView: 1,
-        },
-      },
-    };
+  //       500: {
+  //         gap: 20,
+  //         perView: 1,
+  //       },
+  //     },
+  //   };
 
-    let slider = new Glide(`.${UNIQUE_CLASS}`, OPTIONS);
-    slider.mount();
-    // @ts-ignore
-    return () => slider.destroy();
-  }, [sliderRef, UNIQUE_CLASS, items]);
+  //   let slider = new Glide(`.${UNIQUE_CLASS}`, OPTIONS);
+  //   slider.mount();
+  //   // @ts-ignore
+  //   return () => slider.destroy();
+  // }, [sliderRef, UNIQUE_CLASS, items]);
 
   return (
     <div className={`nc-SectionSliderCollections2 ${className}`}>

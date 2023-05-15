@@ -44,16 +44,16 @@ const SectionClientSay: FC<SectionClientSayProps> = ({ className = "" }) => {
   const id = useId();
   const UNIQUE_CLASS = "glidejs" + id.replace(/:/g, "_");
 
-  useEffect(() => {
-    const OPTIONS: Glide.Options = {
-      perView: 1,
-    };
+  // useEffect(() => {
+  //   const OPTIONS: Glide.Options = {
+  //     perView: 1,
+  //   };
 
-    let slider = new Glide(`.${UNIQUE_CLASS}`, OPTIONS);
-    slider.mount();
-    // @ts-ignore
-    return () => slider.destroy();
-  }, [UNIQUE_CLASS]);
+  //   let slider = new Glide(`.${UNIQUE_CLASS}`, OPTIONS);
+  //   slider.mount();
+  //   // @ts-ignore
+  //   return () => slider.destroy();
+  // }, [UNIQUE_CLASS]);
 
   const renderBg = () => {
     return (

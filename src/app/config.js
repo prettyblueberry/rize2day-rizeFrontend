@@ -1,7 +1,7 @@
 const devnet = false;
 export const config = {
   bunnyURL: "https://storage.bunnycdn.com/ ",
-  ipfsGateway: "https://silver-rapid-shrimp-610.mypinata.cloud/ipfs/",
+  ipfsGateway: "https://cloudflare-ipfs.com/ipfs/",
   socketUrl: "https://rize2day.com",
   baseUrl: "https://rize2day.com/api/",
   API_URL: "https://rize2day.com/",
@@ -10,7 +10,8 @@ export const config = {
     : "https://rize2day.com/cosmwasm/", //'https://rpc-test.coreum.hexskrt.net/',
   REST_URL: devnet
     ? "https://rize2day.com/cosmwasm-rest/"
-    : "https://full-node.mainnet-1.coreum.dev:1317/",
+    : // : "https://full-node.mainnet-1.coreum.dev:1317/",
+      "https://rize2day.com/rest",
   DATA_LAYER: devnet ? "" : "",
   FAUCET_URL: "",
   CHAIN_ID: devnet ? "coreum-devnet-1" : "coreum-mainnet-1",
@@ -32,8 +33,9 @@ export const config = {
   CW20_CONTRACT: devnet
     ? "devcore143gjvxqvea69v0hqp2p6wtz386hhgdn06uw7xntyhleahaunjkqs0jx6pc"
     : "core1qg5ega6dykkxc307y25pecuufrjkxkaggkkxh7nad0vhyhtuhw3slwumn4",
-  COLLECTION_CODE_ID: devnet ? 42 : 6,
+  COLLECTION_CODE_ID: devnet ? 42 : 31,
   CW721_CODE_ID: devnet ? 41 : 4,
+  COINGECKO_URL: "https://api.coingecko.com/api/v3",
 };
 
 export const PINATA_JWT =
@@ -110,6 +112,11 @@ export const FILE_TYPE = {
   THREED: 4,
 };
 
+export const COREUM_PAYMENT_COINS = {
+  CORE: 0,
+  RIZE: 1,
+};
+
 export const CATEGORIES = [
   { value: 1, text: "Arts" },
   { value: 2, text: "Games" },
@@ -118,6 +125,7 @@ export const CATEGORIES = [
   { value: 5, text: "Video" },
   { value: 6, text: "3D NFTs" },
   { value: 7, text: "Photography" },
+  { value: 8, text: "Utility" },
 ];
 
 export const PROPERTY_TYPES = [
@@ -151,10 +159,15 @@ export const RPC_URLs = {
   97: "https://data-seed-prebsc-1-s2.binance.org:8545/",
   80001: "https://matic-mumbai.chainstacklabs.com",
   43113: "https://api.avax-test.network/ext/bc/C/rpc",
-  "coreum-testnet-1": "https://rize2day.com/cosmwasm"
-}
+  "coreum-mainnet-1": "https://rize2day.com/cosmwasm",
+};
 
 export const EVM_MAINNETS_LIST = {
+  [PLATFORM_NETWORKS.COREUM]: {
+    name: "Coreum mainnet",
+    id: 88888,
+    currency: "CORE",
+  },
   [PLATFORM_NETWORKS.ETHEREUM]: {
     name: "Ethereum Mainnet",
     id: 1,
@@ -214,6 +227,11 @@ export const EVM_MAINNETS_LIST = {
 };
 
 export const EVM_TESTNETS_LIST = {
+  [PLATFORM_NETWORKS.COREUM]: {
+    name: "Coreum mainnet",
+    id: 99999,
+    currency: "CORE",
+  },
   [PLATFORM_NETWORKS.ETHEREUM]: {
     name: "Arbitrum Goerli Testnet",
     id: 421613,
@@ -272,6 +290,6 @@ export const EVM_TESTNETS_LIST = {
   },
 };
 
-export const IS_TEST = true;
+export const IS_TEST = false;
 export const ACTIVE_CHAINS =
   IS_TEST === true ? EVM_TESTNETS_LIST : EVM_MAINNETS_LIST;
