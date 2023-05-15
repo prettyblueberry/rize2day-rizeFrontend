@@ -1,11 +1,12 @@
 import React, { FC, useRef, useState, useEffect } from "react";
 import clsx from 'clsx';
 import { Helmet } from "react-helmet";
-import HeaderFilterSearchPage from "components/HeaderFilterSearchPage";
+import RizeFilterSearchPage from "components/RizeFilterSearchPage";
 import CardNFT from "components/CardNFT";
 import axios from "axios";
 import { config, CATEGORIES, FILE_TYPE } from "app/config";
 import { isEmpty } from "app/methods";
+import { useSigningClient } from "app/cosmwasm";
 import CardNFTMusic from "components/CardNFTMusic";
 import CardNFTVideo from "components/CardNFTVideo";
 import CardNFT3D from "components/CardNFT3D";
@@ -63,7 +64,7 @@ const PageSearch: FC<PageSearchProps> = ({ className = "" }) => {
   const [likes, setLikes] = useState(0);
   const [creator, setCreator] = useState(0);
   const [price, setPrice] = useState(0);
-  const [status, setStatus] = useState(3);
+  const [status, setStatus] = useState(0);
   const [range, setRange] = useState([0, 100000]);
   const [priceMin, setPriceMin] = useState("");
   const [priceMax, setPriceMax] = useState("");
@@ -73,6 +74,7 @@ const PageSearch: FC<PageSearchProps> = ({ className = "" }) => {
   const [checked, setChecked] = React.useState([]);
   const [collections, setCollections] = useState([]);
   const [viewNoMore, setViewNoMore] = useState(false);
+  const { isOpenFilter }: any = useSigningClient();
   const pageRef = useRef(null);
 
   useEffect(() => {
@@ -198,7 +200,7 @@ const PageSearch: FC<PageSearchProps> = ({ className = "" }) => {
     setDate(0);
     setLikes(0);
     setCreator(0);
-    setStatus(3);
+    setStatus(0);
     setRange([0, 100000]);
     // setSelectedCollection({});
     setMetaDatas([]);
@@ -250,7 +252,7 @@ const PageSearch: FC<PageSearchProps> = ({ className = "" }) => {
   }
 
   return (
-    <div className={`nc-PageSearch  ${className}`} data-nc-id="PageSearch">
+    <div className={`nc-PageSearch relative min-h-[calc(100vh-346px)] h-1 ${className}`} data-nc-id="PageSearch">
       <Helmet>
         <title>Marketplace || Rize2Day </title>
       </Helmet>
@@ -259,19 +261,16 @@ const PageSearch: FC<PageSearchProps> = ({ className = "" }) => {
         className={`nc-HeadBackgroundCommon h-24 2xl:h-28 top-0 left-0 right-0 w-full bg-primary-50 dark:bg-neutral-800/20 `}
         data-nc-id="HeadBackgroundCommon"
       /> */}
-      <div className="container-fluid sticky top-0 z-20 bg-white dark:bg-[#191818]">
+      <div className="container-fluid absolute top-0 z-20">
         <header className="mx-auto flex flex-col">
-          <HeaderFilterSearchPage
+          <RizeFilterSearchPage
             className="mb-2"
-            onChangeActiveTab={setActiveIndex}
+            isOpen={isOpenFilter}
+            onChangeCategory={setActiveIndex}
             onChangeDate={setDate}
             dateValue={date}
-            onChangeLikes={setLikes}
-            likesValue={likes}
             onChangeCreator={setCreator}
             creatorValue={creator}
-            onChangePrice={setPrice}
-            priceValue={price}
             onChangeStatus={setStatus}
             statusValue={status}
             onChangeRange={setRange}
@@ -282,8 +281,8 @@ const PageSearch: FC<PageSearchProps> = ({ className = "" }) => {
         </header>
       </div>
 
-      <div className="relative px-10 py-6 lg:pb-28 lg:pt-10 space-y-16 lg:space-y-28 overflow-hidden">
-        <main ref={pageRef}>
+      <div className="relative h-full px-10 py-6 lg:pb-28 lg:pt-10 space-y-16 lg:space-y-28 overflow-hidden">
+        <main ref={pageRef} className="h-full">
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-x-8 gap-y-10 mt-8 lg:mt-10">
             {collections &&
               collections.length > 0 &&

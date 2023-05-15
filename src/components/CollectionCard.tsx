@@ -14,6 +14,8 @@ import { config } from "app/config.js";
 import { useNavigate } from "react-router-dom";
 import { IconButton } from "@mui/material";
 import { RiEdit2Line, RiDeleteBin6Line } from "react-icons/ri";
+import { nanoid } from "@reduxjs/toolkit";
+import VideoForBannerPreview from "./VideoForBannerPreview";
 
 export interface CollectionCardProps {
   className?: string;
@@ -33,6 +35,7 @@ const CollectionCard: FC<CollectionCardProps> = ({
   const dispatch = useAppDispatch();
   const currentUsr = useAppSelector(selectCurrentUser);
   const navigate = useNavigate();
+  const [DEMO_NFT_ID] = React.useState(nanoid());
 
   const onSelectCollection = (id: string) => {
     if (id !== "" && id) {
@@ -55,14 +58,35 @@ const CollectionCard: FC<CollectionCardProps> = ({
     }
   };
 
+  const isVideo = (fileName) => {
+    let result = false;
+    if (fileName && fileName.toString() !== "") {
+      if (
+        fileName.toString().includes("mp4") === true ||
+        fileName.toString().includes("MP4") === true
+      ) {
+        result = true;
+      }
+    }
+    return result;
+  };
+
   return (
     <div
       className={`CollectionCard relative p-4 rounded-2xl overflow-hidden h-[410px] flex justify-center flex-col group cursor-pointer ${className}`}
     >
-      <NcImage
-        containerClassName="absolute inset-0"
-        src={`${config.API_URL}uploads/${collection?.bannerURL || ""}` || ""}
-      />
+      {isVideo(collection?.bannerURL || "") !== true ? (
+        <NcImage
+          containerClassName="absolute inset-0"
+          src={`${config.API_URL}uploads/${collection?.bannerURL || ""}` || ""}
+        />
+      ) : (
+        <VideoForBannerPreview
+          src={`${config.API_URL}uploads/${collection?.bannerURL || ""}` || ""}
+          nftId={DEMO_NFT_ID}
+          className="absolute inset-0"
+        />
+      )}
       <div className="absolute inset-x-0 bottom-0 h-2/3 bg-gradient-to-t from-black/80 group-hover:h-full to-transparent "></div>
       {collection &&
         currentUsr?._id === collection?.owner?._id &&

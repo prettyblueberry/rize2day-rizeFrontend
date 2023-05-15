@@ -41,6 +41,14 @@ import { Backdrop, CircularProgress } from "@mui/material";
 import { Helmet } from "react-helmet";
 import { useSigningClient } from "app/cosmwasm";
 import { isSupportedEVMNetwork } from "InteractWithSmartContract/interact";
+import VideoForPreview from "components/VideoForPreview";
+import { nanoid } from "@reduxjs/toolkit";
+import VideoForBannerPreview from "components/VideoForBannerPreview";
+import frameImg from "images/vector.svg";
+import { EditorState, convertToRaw } from "draft-js";
+import { Editor } from "react-draft-wysiwyg";
+import draftToHtml from "draftjs-to-html";
+import "react-draft-wysiwyg/dist/react-draft-wysiwyg.css";
 
 const ColorModeContext = React.createContext({ CollectionSelect: () => {} });
 
@@ -48,6 +56,7 @@ const CreateCollection = () => {
   const categoriesOptions = CATEGORIES;
   const typeOptions = PROPERTY_TYPES;
 
+  const [editorState, setEditorState] = useState(EditorState.createEmpty());
   // const [visible, setVisible] = useState(false);
   const [selectedAvatarFile, setSelectedAvatarFile] = useState(null);
   const [selectedBannerFile, setSelectedBannerFile] = useState(null);
@@ -60,8 +69,11 @@ const CreateCollection = () => {
   const [categories, setCategories] = useState(categoriesOptions[0]);
   const [floorPrice, setFloorPrice] = useState(0);
   const [metaFields, setMetaFields] = useState([]);
+  const [royaltyFields, setRoyaltyFields] = useState([]);
+
   const [working, setWorking] = useState(false);
   const [refresh, setRefresh] = useState(false);
+  const [DEMO_NFT_ID] = React.useState(nanoid());
   const { addCollection, balances, getOwnedCollections } = useSigningClient();
 
   const [mode, setMode] = React.useState("light");
@@ -86,6 +98,13 @@ const CreateCollection = () => {
       setMode("dark");
     }
   }, []);
+
+  const onEditorStateChange = (editorState) => {
+    setEditorState(editorState);
+    setTextDescription(
+      draftToHtml(convertToRaw(editorState.getCurrentContent())) || ""
+    );
+  };
 
   const theme = React.useMemo(
     () =>
@@ -114,7 +133,7 @@ const CreateCollection = () => {
       balances[config.COIN_MINIMAL_DENOM] <= 0 ||
       (tokenAmountShouldPay > 0 && balances.cw20 <= tokenAmountShouldPay)
     ) {
-      toast.warn("Insufficient TESTCORE or USD");
+      toast.warn("Insufficient CORE or RIZE");
       return false;
     }
     return true;
@@ -179,24 +198,22 @@ const CreateCollection = () => {
                 .catch((errror) => {});
               return;
             }
+            let royalties = [];
+            for (let idx = 0; idx < royaltyFields.length; idx++) {
+              console.log("royalties[", idx, "] = ", royaltyFields[idx]);
+              royalties.push({
+                address: royaltyFields[idx].address,
+                rate: royaltyFields[idx].percentage * 10000,
+              });
+            }
             const cratedTx = await addCollection(
               currentUsr.address,
-              10000,
+              100000,
               textName,
               "Rize2DayNFT",
               config.CW721_CODE_ID,
-              100000,
-              [
-                {
-                  address: currentUsr.address,
-                  rate: 50000,
-                },
-                {
-                  address: "testcore125y885enkegnqzsyxq4rgnswsqhqjrmgdratml",
-                  // "address": "devcore18a97jc79x8mt5hxzchf6h039gn7vk43dwrjnt6",
-                  rate: 10000,
-                },
-              ],
+              1000000,
+              [...royalties],
               newCollectionId
             );
             if (cratedTx != -1) {
@@ -314,7 +331,6 @@ const CreateCollection = () => {
         setWorking(false);
         return;
       });
-
     formData = new FormData();
     formData.append("itemFile", selectedBannerFile);
     formData.append("authorId", "hch");
@@ -367,6 +383,51 @@ const CreateCollection = () => {
     setRefresh(!refresh);
   };
 
+  const setAddRoyaltyField = () => {
+    var rfs = royaltyFields;
+    rfs.push({
+      address: "",
+      royalty: 0,
+    });
+    if (rfs?.length > 10) {
+      toast.warning("You can use 10 wallets for loyalty at maximum.");
+      return;
+    }
+    setRoyaltyFields(rfs);
+    setRefresh(!refresh);
+  };
+
+  const removeRoyaltyField = (index) => {
+    const mfs = royaltyFields;
+    mfs.splice(index, 1);
+    setRoyaltyFields(mfs);
+    setRefresh(!refresh);
+  };
+
+  const handleChangeRoyaltyAddressInput = (e, index) => {
+    const mfs = royaltyFields;
+    mfs[index].address = e.target.value;
+    setRoyaltyFields(mfs);
+    setRefresh(!refresh);
+  };
+
+  const handleChangeRoyaltyPercentageInput = (e, index) => {
+    const mfs = royaltyFields;
+    mfs[index].percentage = e.target.value;
+    let sumOfPercents = 0;
+    for (let idx = 0; idx < mfs.length; idx++) {
+      sumOfPercents += Number(mfs[idx].percentage);
+    }
+    if (sumOfPercents > 100) {
+      toast.warning(
+        "Sum of royalty percents should be equal or less than 100."
+      );
+      return;
+    }
+    setRoyaltyFields(mfs);
+    setRefresh(!refresh);
+  };
+
   const removeMetaField = (index) => {
     const mfs = metaFields;
     mfs.splice(index, 1);
@@ -411,6 +472,19 @@ const CreateCollection = () => {
     setRefresh(!refresh);
   };
 
+  const isVideo = (fileName) => {
+    let result = false;
+    if (fileName && fileName.toString() !== "") {
+      if (
+        fileName.toString().includes("mp4") === true ||
+        fileName.toString().includes("MP4") === true
+      ) {
+        result = true;
+      }
+    }
+    return result;
+  };
+
   return (
     <>
       <Helmet>
@@ -429,6 +503,17 @@ const CreateCollection = () => {
           }}
         >
           <div className={styles1.details}>
+            {isUserAMemberOfCommunity === true && (
+              <div className="flexl mt-5 ml-0 mb-5">
+                <Checkbox
+                  value={isRizeMemberCollection}
+                  onChange={(e, checked) => {
+                    setIsRizeMemberCollection(checked);
+                  }}
+                />
+                <Label>Rize Member Collection</Label>
+              </div>
+            )}
             <div className={styles1.stage}>Logo image</div>
             <div className={styles1.text}>
               This image will also be used for navigation. 350x350 recommend
@@ -469,47 +554,77 @@ const CreateCollection = () => {
           }}
         >
           <div className={styles1.details}>
-            <div className={styles1.stage}>Banner image</div>
+            <div className={styles1.stage}>
+              {isRizeMemberCollection !== true
+                ? "Banner image"
+                : "Banner video/image (recommended size is 1440*400)"}
+            </div>
           </div>
         </div>
         <div
-          className={styles2.item}
+          className={` ${styles2.item}`}
           style={{ border: "3px dashed rgb(204, 204, 204)", height: "200px" }}
         >
-          <div className={styles2.file}>
+          <div
+            className={`bg-input ${
+              isVideo(selectedBannerFile?.name || "") !== true
+                ? "bg-[#e6e9ee]"
+                : "bg-[url('images/vector3.svg')]"
+            }`}
+          >
             <div className={styles2.icon}>
               <Icon name="upload-file" size="48px" />
             </div>
             {!bannerImg && (
-              <div className={cn(styles1.text, "text-center")}>
-                This image will be appear at the top of your collection page.
-                Avoid including too much text in this banner image, <br />
+              <div className={`  ${cn(styles1.text, "text-center")}`}>
+                This
+                {isRizeMemberCollection !== true
+                  ? " image"
+                  : " video/image"}{" "}
+                will be appear at the top of your collection page. Avoid
+                including too much text in this banner
+                {isRizeMemberCollection !== true
+                  ? " image"
+                  : " video/image"}, <br />
                 as the dimensions change on different devices. 1400x400
                 recommend.
               </div>
             )}
-            <input
-              className={styles2.load}
-              type="file"
-              accept=".png,.jpeg,.jpg,.gif,.webp"
-              onChange={changeBanner}
-            />
-            <div>
-              {bannerImg !== "" && (
-                <img
-                  id="BannerImg"
-                  className={styles2.image}
-                  src={bannerImg}
-                  alt="Banner"
-                />
-              )}
-            </div>
+            {isRizeMemberCollection !== true ? (
+              <input
+                className={styles2.load}
+                type="file"
+                accept=".png,.jpeg,.jpg,.gif,.webp"
+                onChange={changeBanner}
+              />
+            ) : (
+              <input
+                className={`${styles2.load}`}
+                type="file"
+                accept=".png,.jpeg,.jpg,.gif,.webp,.mp4"
+                onChange={changeBanner}
+              />
+            )}
+            {isVideo(selectedBannerFile?.name || "") !== true ? (
+              <img
+                id="BannerImg"
+                className={styles2.image}
+                src={bannerImg}
+                alt="Banner"
+              />
+            ) : (
+              <VideoForBannerPreview
+                src={bannerImg}
+                nftId={DEMO_NFT_ID}
+                className="h-full absolute z-5"
+              />
+            )}
           </div>
         </div>
         <div className={styles.item}>
           <div className={styles1.stage}>Collection Details</div>
-          <div className="grid grid-cols-2 gap-4">
-            <div className="h-full flex flex-col gap-4">
+          <div className=" flex min-h-[250px] ">
+            <div className="flex flex-col min-h-full justify-between w-2/5">
               <FormItem label="Name *">
                 <Input
                   defaultValue="name"
@@ -540,29 +655,65 @@ const CreateCollection = () => {
                   options={categoriesOptions}
                 />
               </FormItem>
-              {isUserAMemberOfCommunity === true && (
-                <div className="flexl mt-5">
-                  <Checkbox
-                    value={isRizeMemberCollection}
-                    onChange={(e, checked) => {
-                      setIsRizeMemberCollection(checked);
-                    }}
-                  />
-                  <Label>Rize Member Collection</Label>
-                </div>
-              )}
             </div>
-            <div className="flex flex-col h-full">
+            <div className="flex flex-col h-full w-3/5 ml-5">
               <Label>Description</Label>
-              <Textarea
-                className="mt-1.5 h-full"
-                placeholder="Enter collection description"
-                value={textDescription}
-                onChange={(event) => {
-                  setTextDescription(event.target.value);
-                }}
+              <Editor
+                editorState={editorState}
+                wrapperClassName="demo-wrapper mt-1.5 "
+                editorClassName="demo-editor border-2 rounded-lg border-neutral-100 dark:border-neutral-400  min-h-[200px]"
+                onEditorStateChange={onEditorStateChange}
               />
             </div>
+          </div>
+          <div className="flex flex-col mt-5">
+            <Label>Collection Royalties</Label>
+
+            <ColorModeContext.Provider value={colorMode}>
+              <ThemeProvider theme={theme}>
+                <div className="flex flex-col">
+                  {royaltyFields &&
+                    royaltyFields.length > 0 &&
+                    royaltyFields.map((field, index) => {
+                      let tag = "";
+                      let placeholder = "";
+                      return (
+                        <div
+                          className="flex justify-between gap-1 mt-[14px] items-center"
+                          key={index}
+                        >
+                          <IconButton onClick={() => removeRoyaltyField(index)}>
+                            <AiOutlineMinusCircle size={28} />
+                          </IconButton>
+                          <Input
+                            placeholder={"Wallet"}
+                            className="w-3/4 mr-1"
+                            value={field?.address}
+                            onChange={(e) =>
+                              handleChangeRoyaltyAddressInput(e, index)
+                            }
+                          />
+                          <Input
+                            placeholder={"Royalty(1-100)"}
+                            className="w-1/4 text-right"
+                            value={field?.percentage}
+                            onChange={(e) =>
+                              handleChangeRoyaltyPercentageInput(e, index)
+                            }
+                          />
+                          <div>%</div>
+                        </div>
+                      );
+                    })}
+                </div>
+              </ThemeProvider>
+            </ColorModeContext.Provider>
+            <button
+              className="rounded-2xl mt-2 p-2 border-dashed border-2 border-neutral-200 dark:border-neutral-600"
+              onClick={setAddRoyaltyField}
+            >
+              ADD ROYALTY
+            </button>
           </div>
           <div className="flex flex-col mt-5">
             <Label>Add custom terms and conditions</Label>
@@ -575,7 +726,7 @@ const CreateCollection = () => {
               }}
             />
           </div>
-          <div className="flex flex-col mt-5">
+          {/* <div className="flex flex-col mt-5">
             <Label>Schema Properties</Label>
             <ColorModeContext.Provider value={colorMode}>
               <ThemeProvider theme={theme}>
@@ -669,7 +820,7 @@ const CreateCollection = () => {
             >
               ADD PROPERTY
             </button>
-          </div>
+          </div> */}
           <div
             className={styles2.foot}
             style={{

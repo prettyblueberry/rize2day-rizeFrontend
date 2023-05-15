@@ -35,13 +35,21 @@ import { useNavigate } from "react-router-dom";
 import { Backdrop, CircularProgress } from "@mui/material";
 import { Helmet } from "react-helmet";
 import { useSigningClient } from "app/cosmwasm";
+import VideoForBannerPreview from "components/VideoForBannerPreview";
+import { nanoid } from "@reduxjs/toolkit";
+import { EditorState, convertToRaw } from "draft-js";
+import { Editor } from "react-draft-wysiwyg";
+import draftToHtml from "draftjs-to-html";
+import "react-draft-wysiwyg/dist/react-draft-wysiwyg.css";
 
 const ColorModeContext = React.createContext({ CollectionSelect: () => {} });
 
 const EditCollection = () => {
   const categoriesOptions = CATEGORIES;
   const typeOptions = PROPERTY_TYPES;
+  const [DEMO_NFT_ID] = React.useState(nanoid());
 
+  const [editorState, setEditorState] = useState(EditorState.createEmpty());
   // const [visible, setVisible] = useState(false);
   const [selectedAvatarFile, setSelectedAvatarFile] = useState(null);
   const [selectedBannerFile, setSelectedBannerFile] = useState(null);
@@ -55,7 +63,7 @@ const EditCollection = () => {
   const [oldData, setOldData] = useState({});
   const [working, setWorking] = useState(false);
   const [refresh, setRefresh] = useState(false);
-  const { editCollection, balances, getOwnedCollections } = useSigningClient();
+  const { balances } = useSigningClient();
 
   const [mode, setMode] = React.useState("light");
   const colorMode = React.useContext(ColorModeContext);
@@ -140,7 +148,7 @@ const EditCollection = () => {
       balances[config.COIN_MINIMAL_DENOM] <= 0 ||
       (tokenAmountShouldPay > 0 && balances.cw20 <= tokenAmountShouldPay)
     ) {
-      toast.warn("Insufficient TESTCORE or USD");
+      toast.warn("Insufficient CORE or RIZE");
       return false;
     }
     return true;
@@ -348,6 +356,26 @@ const EditCollection = () => {
     setRefresh(!refresh);
   };
 
+  const isVideo = (fileName) => {
+    let result = false;
+    if (fileName && fileName.toString() !== "") {
+      if (
+        fileName.toString().includes("mp4") === true ||
+        fileName.toString().includes("MP4") === true
+      ) {
+        result = true;
+      }
+    }
+    return result;
+  };
+
+  const onEditorStateChange = (editorState) => {
+    setEditorState(editorState);
+    setTextDescription(
+      draftToHtml(convertToRaw(editorState.getCurrentContent())) || ""
+    );
+  };
+
   return (
     <>
       <Helmet>
@@ -430,12 +458,18 @@ const EditCollection = () => {
               onChange={changeBanner}
             />
             <div>
-              {bannerImg !== "" && (
+              {isVideo(bannerImg || "") !== true ? (
                 <img
                   id="BannerImg"
                   className={styles2.image}
                   src={`${config.API_URL}uploads/${bannerImg}`}
                   alt="Banner"
+                />
+              ) : (
+                <VideoForBannerPreview
+                  nftId={DEMO_NFT_ID}
+                  className={styles2.image}
+                  src={`${config.API_URL}uploads/${bannerImg}`}
                 />
               )}
             </div>
@@ -443,8 +477,8 @@ const EditCollection = () => {
         </div>
         <div className={styles.item}>
           <div className={styles1.stage}>Collection Details</div>
-          <div className="grid grid-cols-2 gap-4">
-            <div className="h-full flex flex-col gap-4">
+          <div className=" flex min-h-[250px] ">
+            <div className="flex flex-col min-h-full justify-between w-2/5">
               <FormItem label="Name *">
                 <Input
                   defaultValue="name"
@@ -477,19 +511,17 @@ const EditCollection = () => {
                 />
               </FormItem>
             </div>
-            <div className="flex flex-col h-full">
+            <div className="flex flex-col h-full w-3/5 ml-5">
               <Label>Description</Label>
-              <Textarea
-                className="mt-1.5 h-full"
-                placeholder="Enter collection description over here"
-                value={textDescription}
-                onChange={(event) => {
-                  setTextDescription(event.target.value);
-                }}
+              <Editor
+                editorState={editorState}
+                wrapperClassName="demo-wrapper mt-1.5 "
+                editorClassName="demo-editor border-2 rounded-lg border-neutral-100 dark:border-neutral-400  min-h-[200px]"
+                onEditorStateChange={onEditorStateChange}
               />
             </div>
           </div>
-          <div className="flex flex-col mt-5">
+          {/* <div className="flex flex-col mt-5">
             <Label>Schema Properties</Label>
             <ColorModeContext.Provider value={colorMode}>
               <ThemeProvider theme={theme}>
@@ -583,7 +615,7 @@ const EditCollection = () => {
             >
               ADD PROPERTY
             </button>
-          </div>
+          </div> */}
           <div
             className={styles2.foot}
             style={{

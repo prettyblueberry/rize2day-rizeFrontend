@@ -125,7 +125,7 @@ export default function AvatarDropdown() {
             <img src={userIcon} />
           </IconButton>
         </div>
-        <div className="dropdown-content z-10 w-screen max-w-[220px] px-4 -right-10 sm:right-0 sm:px-0">
+        <div className="dropdown-content avatar-dropdown-content z-10 w-screen max-w-[220px] px-4 -right-10 sm:right-0 sm:px-0">
           <div className="overflow-hidden shadow-lg rounded-3xl ring-1 ring-black ring-opacity-5">
             <div className="relative grid grid-cols-1 gap-6 px-6 bg-white dark:bg-neutral-800 py-7">
               {/* <div className="flex items-center space-x-3">

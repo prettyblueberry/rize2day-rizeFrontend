@@ -42,10 +42,10 @@ const ModalTransferToken: FC<ModalTransferTokenProps> = ({
     return (
       <form action="#">
         <h3 className="text-lg font-semibold text-neutral-900 dark:text-neutral-200">
-          Transfer token
+          Transfer NFT
         </h3>
         <span className="text-sm">
-          You can transfer tokens from your address to another
+          You can transfer nfts from your address to another
         </span>
         <div className="mt-8 ">
           <Input ref={textareaRef} placeholder="Paste address" type={"text"}

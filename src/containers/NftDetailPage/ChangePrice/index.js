@@ -1,55 +1,47 @@
-import React, {useState} from "react";
+import React, { useState } from "react";
 import cn from "classnames";
 import styles from "./Transfer.module.sass";
 import ButtonPrimary from "shared/Button/ButtonPrimary";
 
-const ChangePrice = ({ className = "", onOk , onCancel}) => {
+const ChangePrice = ({ className = "", onOk, onCancel }) => {
   const [price, setPrice] = useState(0);
   const regularInputTestRegExp = /^([0-9]+([.][0-9]*)?|[.][0-9]+)$/gm;
 
-  const onChangePrice = (e) =>
-  {
-    var inputedPrice = e.target.value;    
-    if(inputedPrice !== "") 
-    {
-      let m; let correct = false;
-      while ((m = regularInputTestRegExp.exec(inputedPrice)) !== null) 
-      {
+  const onChangePrice = (e) => {
+    var inputedPrice = e.target.value;
+    if (inputedPrice !== "") {
+      let m;
+      let correct = false;
+      while ((m = regularInputTestRegExp.exec(inputedPrice)) !== null) {
         if (m.index === regularInputTestRegExp.lastIndex) {
           regularInputTestRegExp.lastIndex++;
         }
-        if(m[0] === inputedPrice) 
-        {
+        if (m[0] === inputedPrice) {
           correct = true;
-        }         
-      }      
-      if(!correct)         
-      {
+        }
+      }
+      if (!correct) {
         return;
       }
-    }        
-    if(isNaN(inputedPrice))
-    {
+    }
+    if (isNaN(inputedPrice)) {
       return;
     }
     setPrice(inputedPrice);
-  }
+  };
 
   const onContinue = () => {
-    if(isNaN(price) || Number(price) < 0.00001)
-    {
+    if (isNaN(price) || Number(price) < 0.00001) {
       setPrice(0.00001);
       return;
     }
     onOk(price);
-  }
+  };
 
   return (
     <div className={cn(className, styles.transfer)}>
       <div className={cn("h4", styles.title)}>Change Nft Price</div>
-      <div className={styles.text}>
-        You can change nft price now.
-      </div>
+      <div className={styles.text}>You can change nft price now.</div>
       <div className={styles.info}>Price</div>
       <div className={styles.field}>
         <input
@@ -57,14 +49,26 @@ const ChangePrice = ({ className = "", onOk , onCancel}) => {
           type="text"
           name="price"
           id="priceInput"
-          value= {price || ""}
-          onChange = { (e) => onChangePrice(e) }
+          value={price || ""}
+          onChange={(e) => onChangePrice(e)}
           placeholder="Price must be bigger than 0.00001"
         />
       </div>
       <div className={styles.btns}>
-        <ButtonPrimary className={cn("button", styles.button)} onClick={()=>{onContinue()}}>Apply</ButtonPrimary>
-        <ButtonPrimary className={cn("button-stroke", styles.button)} onClick={onCancel}>Cancel</ButtonPrimary>
+        <ButtonPrimary
+          className={cn("button", styles.button)}
+          onClick={() => {
+            onContinue();
+          }}
+        >
+          Apply
+        </ButtonPrimary>
+        <button
+          className="bg-transparent text-[#33FF00] border-2 rounded-lg border-[#33FF00] w-full py-4"
+          onClick={onCancel}
+        >
+          Cancel
+        </button>
       </div>
     </div>
   );

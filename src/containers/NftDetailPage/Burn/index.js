@@ -12,8 +12,19 @@ const Burn = ({ className = "", onOk, onCancel }) => {
         will be transfered to zero address
       </div>
       <div className={styles.btns}>
-        <ButtonPrimary className={cn("button-pink", styles.button)} onClick={onOk} >Continue</ButtonPrimary>
-        <ButtonPrimary className={cn("button-stroke", styles.button)} onClick={onCancel} >Cancel</ButtonPrimary>
+        <ButtonPrimary
+          className={cn("button-pink", styles.button)}
+          onClick={onOk}
+        >
+          Continue
+        </ButtonPrimary>
+
+        <button
+          className="bg-transparent text-[#33FF00] border-2 rounded-lg border-[#33FF00] w-full py-4"
+          onClick={onCancel}
+        >
+          Cancel
+        </button>
       </div>
     </div>
   );

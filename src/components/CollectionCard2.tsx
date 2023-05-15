@@ -9,6 +9,8 @@ import { useNavigate } from "react-router-dom";
 import { selectCurrentUser } from "app/reducers/auth.reducers";
 import { changeConsideringCollectionId } from "app/reducers/collection.reducers";
 import { config } from "app/config";
+import VideoForBannerPreview from "./VideoForBannerPreview";
+import { nanoid } from "@reduxjs/toolkit";
 
 export interface CollectionCard2Props {
   className?: string;
@@ -19,35 +21,64 @@ export interface CollectionCard2Props {
 const CollectionCard2: FC<CollectionCard2Props> = ({
   className,
   imgs = [nftsImgs[9], nftsImgs[10], nftsImgs[11], nftsImgs[8]],
-  collection
-}) => {  
+  collection,
+}) => {
   const dispatch = useAppDispatch();
   const currentUsr = useAppSelector(selectCurrentUser);
   const navigate = useNavigate();
   const [data, setData] = useState();
-  
+  const [DEMO_NFT_ID] = React.useState(nanoid());
+
   useEffect(() => {
     setData(collection);
   }, [collection]);
 
-  const onSelectCollection = (id: string) =>
-  {
-    if(id !== "" && id)
-    {
+  const onSelectCollection = (id: string) => {
+    if (id !== "" && id) {
       // go to the item list of this collection
       dispatch(changeConsideringCollectionId(id));
       localStorage.setItem("collectionId", id);
-      navigate("/collectionItems/"+id);
+      navigate("/collectionItems/" + id);
     }
-  }
-  
+  };
+
+  const isVideo = (fileName) => {
+    let result = false;
+    if (fileName && fileName.toString() !== "") {
+      if (
+        fileName.toString().includes("mp4") === true ||
+        fileName.toString().includes("MP4") === true
+      ) {
+        result = true;
+      }
+    }
+    return result;
+  };
+
   return (
-    <div className={`CollectionCard2 group relative cursor-pointer ${className}`}  onClick={() => {onSelectCollection((data as any)?._id || "")}} >
+    <div
+      className={`CollectionCard2 group relative cursor-pointer ${className}`}
+      onClick={() => {
+        onSelectCollection((data as any)?._id || "");
+      }}
+    >
       <div className="relative flex flex-col overflow-hidden rounded-2xl">
-        {
-          ((data as any)?.collection_info?.bannerURL != undefined && (data as any)?.collection_info?.bannerURL != "") && 
-          <NcImage containerClassName="aspect-w-8 aspect-h-5" src={ `${config.API_URL}uploads/${(data as any)?.collection_info?.bannerURL}`} />
-        }
+        {isVideo((data as any)?.collection_info?.bannerURL || "") !== true ? (
+          <NcImage
+            containerClassName="aspect-w-8 aspect-h-5"
+            src={`${config.API_URL}uploads/${
+              (data as any)?.collection_info?.bannerURL
+            }`}
+          />
+        ) : (
+          <VideoForBannerPreview
+            src={`${config.API_URL}uploads/${
+              (data as any)?.collection_info?.bannerURL
+            }`}
+            nftId={DEMO_NFT_ID}
+            className="aspect-w-8 aspect-h-5"
+          />
+        )}
         <div className="grid grid-cols-3 gap-1.5 mt-1.5">
           {/* {
             (data as any).items_list 
@@ -62,28 +93,37 @@ const CollectionCard2: FC<CollectionCard2Props> = ({
       <div className="relative mt-5 ">
         {/* TITLE */}
         <h2 className="text-2xl font-semibold transition-colors group-hover:text-primary-500">
-        {(data as any)?.collection_info.name || ""}
+          {(data as any)?.collection_info.name || ""}
         </h2>
         {/* AUTHOR */}
         <div className="flex justify-between mt-2">
           <div className="flex items-center truncate">
-            {
-              ((data as any)?.creator_info.avatar  !== undefined && (data as any)?.creator_info.avatar !== "") ?
-              <Avatar sizeClass="h-6 w-6" imgUrl={`${config.API_URL}uploads/${(data as any)?.creator_info.avatar || ""}` || ""} />
-              :
+            {(data as any)?.creator_info.avatar !== undefined &&
+            (data as any)?.creator_info.avatar !== "" ? (
+              <Avatar
+                sizeClass="h-6 w-6"
+                imgUrl={
+                  `${config.API_URL}uploads/${
+                    (data as any)?.creator_info.avatar || ""
+                  }` || ""
+                }
+              />
+            ) : (
               <Avatar sizeClass="h-6 w-6" />
-            }
+            )}
             <div className="ml-2 text-sm truncate">
               <span className="hidden font-normal sm:inline-block">
                 Creator
               </span>
               {` `}
-              <span className="font-medium">{(data as any)?.creator_info.username || ""}</span>
+              <span className="font-medium">
+                {(data as any)?.creator_info.username || ""}
+              </span>
             </div>
             <VerifyIcon iconClass="w-4 h-4" />
           </div>
           <span className="mb-0.5 ml-2 inline-flex justify-center items-center px-2 py-1.5 border-2 border-secondary-500 text-secondary-500 rounded-md text-xs !leading-none font-medium">
-           {(data as any)?.collection_info.items?.length || 0} items
+            {(data as any)?.collection_info.items?.length || 0} items
           </span>
         </div>
       </div>

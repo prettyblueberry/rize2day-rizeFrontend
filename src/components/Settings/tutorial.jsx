@@ -34,7 +34,7 @@ export default [
     {
         "id": 4,
         "title": "Mint NFT",
-        "description": "For every new NFT that you wish to create, it is necessary to buy USD. Upload your files into the right category, add some information for potential buyers to see, and proceed to validate and seal each NFT using your Wallet.",
+        "description": "To create an NFT, you must have some tokens of the chain you wish to mint on. Upload your files and add information about the NFT. Click the collection you want to add to and click create NFT. Then approve in your wallet.",
         "image": {
             "src": "/images/tutorial/4.png"
         }

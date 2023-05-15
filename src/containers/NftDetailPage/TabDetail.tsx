@@ -55,7 +55,7 @@ const TabDetail = (props: any) => {
                   <span className="flex items-center text-sm">
                     <span className="">
                       {`${item?.price || 0} 
-                    ${getItemPriceUnitText(item, currentNetworkSymbol)} by `}
+                    ${getItemPriceUnitText(item)} by `}
                     </span>
                     <span className="ml-1 font-medium text-neutral-900 dark:text-neutral-200">
                       {item?.user_id?.username || ""}

@@ -49,7 +49,7 @@ export interface NftMoreDropdownProps {
 
 const actionsDefault: NftMoreDropdownProps["actions"] = [
   { id: "edit", name: "Change price", icon: "las la-dollar-sign" },
-  { id: "transferToken", name: "Transfer token", icon: "las la-sync" },
+  { id: "transferToken", name: "Transfer NFT", icon: "las la-sync" },
   { id: "burn", name: "Burn item", icon: "las la-trash-alt" },
 ];
 
@@ -79,7 +79,7 @@ const NftMoreDropdown: FC<NftMoreDropdownProps> = ({
       balances[config.COIN_MINIMAL_DENOM] <= 0 ||
       (tokenAmountShouldPay > 0 && balances.cw20 <= tokenAmountShouldPay)
     ) {
-      toast.warn("Insufficient TESTCORE or USD");
+      toast.warn("Insufficient CORE or RIZE");
       return false;
     }
     return true;
@@ -360,7 +360,7 @@ const NftMoreDropdown: FC<NftMoreDropdownProps> = ({
       })
       .then((docs) => {
         toast.success("You've deleted an item.");
-        navigate(`/page-author/${currentUsr?._id || ""}`);
+        navigate(`/collectionItems/${globalDetailNFT?.collection_id || ""}`);
       })
       .catch((err) => {
         console.log("delete an item : ", err);
@@ -409,7 +409,7 @@ const NftMoreDropdown: FC<NftMoreDropdownProps> = ({
         if ((result as any).success === true) {
           toast.success("You've burnt an item.");
           deleteItem();
-          navigate(`/page-author/${globalDetailNFT?.creator?._id || ""}`);
+          navigate(`/collectionItems/${globalDetailNFT?.collection_id || ""}`);
         } else toast.error((result as any).message);
       } catch (err) {
         setProcessing(false);
@@ -435,7 +435,9 @@ const NftMoreDropdown: FC<NftMoreDropdownProps> = ({
             .then((response) => {
               if (response.data.code == 0) {
                 toast.success("You 've burnt an item.");
-                navigate("/page-search");
+                navigate(
+                  `/collectionItems/${globalDetailNFT?.collection_id || ""}`
+                );
               } else {
                 toast.error("Internal server error.");
               }

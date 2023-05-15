@@ -6,6 +6,7 @@ import clsx from "clsx";
 import MenuBar from "shared/MenuBar/MenuBar";
 import { IoWalletOutline } from "react-icons/io5";
 import AvatarDropdown from "./AvatarDropdown";
+import ShoppingCart from "./ShoppingCart";
 import ButtonPrimary from "shared/Button/ButtonPrimary";
 import { useSigningClient } from "app/cosmwasm";
 import axios from "axios";
@@ -379,7 +380,7 @@ const MainNav2Logged: FC<MainNav2LoggedProps> = () => {
           <div className="relative dropdown">
             <div className={`dropbtn p-2`}>
               <div className="group py-3 px-6 h-[50px] hover:bg-gray-100 dark:hover:bg-neutral-800 rounded-full inline-flex items-center text-sm font-medium hover:text-opacity-100 relative !outline-none">
-                {isSupportedNetwork(currentNetworkSymbol) === false && "Chains"}
+                {isSupportedNetwork(currentNetworkSymbol) === false && "Networks"}
                 {currentNetworkSymbol === PLATFORM_NETWORKS.COREUM && (
                   <div className="flex justify-center items-center">
                     <img
@@ -896,7 +897,7 @@ const MainNav2Logged: FC<MainNav2LoggedProps> = () => {
           }
         </div>
         {!isEmpty(walletAddress) && <AvatarDropdown />}
-
+        <ShoppingCart />
         <div className="flex items-center space-x-3 lg:hidden">
           <MenuBar />
         </div>

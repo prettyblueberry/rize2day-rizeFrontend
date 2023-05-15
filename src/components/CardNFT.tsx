@@ -6,6 +6,7 @@ import NcImage from "shared/NcImage/NcImage";
 import { AiOutlineMessage } from "react-icons/ai";
 import { defaultImage, nftsImgs } from "contains/fakeData";
 import ItemTypeImageIcon from "./ItemTypeImageIcon";
+import CartButton from "./CartButton";
 import LikeButton from "./LikeButton";
 import Prices from "./Prices";
 import { ClockIcon } from "@heroicons/react/outline";
@@ -94,7 +95,7 @@ const CardNFT: FC<CardNFTProps> = (props: any) => {
             setNftItem(result.data.data);
             checkIsLiked(result.data.data);
           })
-          .catch(() => {});
+          .catch(() => { });
       });
   };
 
@@ -201,9 +202,8 @@ const CardNFT: FC<CardNFTProps> = (props: any) => {
   const renderView = () => {
     return (
       <div
-        className={`nc-CardNFT z-10 m-auto relative flex flex-col group [ nc-box-has-hover nc-dark-box-bg-has-hover ] ${
-          props?.isHome ? "!border-[#22c55e]" : ""
-        } ${className}`}
+        className={`nc-CardNFT z-10 m-auto relative flex flex-col group [ nc-box-has-hover nc-dark-box-bg-has-hover ] ${props?.isHome ? "!border-[#22c55e]" : ""
+          } ${className}`}
         data-nc-id="CardNFT"
       >
         <div className="relative flex-shrink-0 ">
@@ -216,11 +216,12 @@ const CardNFT: FC<CardNFTProps> = (props: any) => {
                   ? navigate(`/nft-detail/${(nftItem as any)?._id}`)
                   : navigate("/nft-detail");
               }}
-              className="object-cover cursor-pointer w-full h-full group-hover:scale-[1.03] transition-transform duration-300 ease-in-out will-change-transform"
+              className="object-cover cursor-pointer w-full max-h-[250px] rounded-3xl overflow-hidden  group-hover:scale-[1.03] transition-transform duration-300 ease-in-out will-change-transform"
             />
           </div>
           <ItemTypeImageIcon className="absolute top-3 left-3 !w-9 !h-9" />
           <div className="flex flex-row absolute top-3 right-3 z-10 !h-10 bg-black/50 px-3.5 items-center justify-center rounded-full text-white">
+            <CartButton nftId={(nftItem as any)?._id} />
             <div onClick={() => handleMessage((nftItem as any)?.owner)}>
               <AiOutlineMessage
                 className="flex items-center justify-center cursor-pointer rounded-full text-white"
@@ -252,7 +253,7 @@ const CardNFT: FC<CardNFTProps> = (props: any) => {
             >
               {((nftItem as any)?.name || "").toString().length > 15
                 ? ((nftItem as any)?.name || "").toString().substring(0, 15) +
-                  "..."
+                "..."
                 : ((nftItem as any)?.name || "").toString()}
             </h2>
             <div className="flex justify-between gap-2">
@@ -268,9 +269,8 @@ const CardNFT: FC<CardNFTProps> = (props: any) => {
                     <Avatar
                       imgUrl={
                         (nftItem as any)?.owner?.avatar
-                          ? `${config.API_URL}uploads/${
-                              (nftItem as any)?.owner.avatar
-                            }`
+                          ? `${config.API_URL}uploads/${(nftItem as any)?.owner.avatar
+                          }`
                           : defaultAvatar
                       }
                       sizeClass="w-8 h-8 sm:w-8 sm:h-8"
@@ -293,7 +293,14 @@ const CardNFT: FC<CardNFTProps> = (props: any) => {
             <div className="w-2d4 w-full border-b border-neutral-100 dark:border-neutral-600"></div>
           )}
           {!props?.isHome && (
-            <div className="flex justify-between items-end ">
+            <div
+              className="flex justify-between items-end cursor-pointer"
+              onClick={() => {
+                (nftItem as any)?._id
+                  ? navigate(`/nft-detail/${(nftItem as any)?._id}`)
+                  : navigate("/nft-detail");
+              }}
+            >
               <Prices
                 labelTextClassName="bg-white dark:bg-[#191818] dark:group-hover:bg-[#202020] group-hover:bg-neutral-50"
                 labelText={
@@ -302,8 +309,8 @@ const CardNFT: FC<CardNFTProps> = (props: any) => {
                       ? "Current Bid"
                       : "Start price"
                     : (nftItem as any)?.isSale == 1
-                    ? "Sale Price"
-                    : "Price"
+                      ? "Sale Price"
+                      : "Price"
                 }
                 item={nftItem}
               />
@@ -359,9 +366,8 @@ const CardNFT: FC<CardNFTProps> = (props: any) => {
                   <span>Collection:</span>
                   <div className="flex flex-row gap-4 items-center">
                     <Avatar
-                      imgUrl={`${config.API_URL}uploads/${
-                        (nftItem as any)?.collection_id?.logoURL
-                      }`}
+                      imgUrl={`${config.API_URL}uploads/${(nftItem as any)?.collection_id?.logoURL
+                        }`}
                       sizeClass="w-8 h-8 sm:w-9 sm:h-9"
                     />
                     <span>{(nftItem as any)?.collection_id?.name}</span>
@@ -371,9 +377,8 @@ const CardNFT: FC<CardNFTProps> = (props: any) => {
                   <span>Owner:</span>
                   <div className="flex flex-row gap-4 items-center">
                     <Avatar
-                      imgUrl={`${config.API_URL}uploads/${
-                        (nftItem as any)?.owner?.avatar
-                      }`}
+                      imgUrl={`${config.API_URL}uploads/${(nftItem as any)?.owner?.avatar
+                        }`}
                       sizeClass="w-8 h-8 sm:w-9 sm:h-9"
                     />
                     <span>{(nftItem as any)?.owner?.username}</span>
@@ -383,9 +388,8 @@ const CardNFT: FC<CardNFTProps> = (props: any) => {
                   <span>Creator:</span>
                   <div className="flex flex-row gap-4 items-center">
                     <Avatar
-                      imgUrl={`${config.API_URL}uploads/${
-                        (nftItem as any)?.creator?.avatar
-                      }`}
+                      imgUrl={`${config.API_URL}uploads/${(nftItem as any)?.creator?.avatar
+                        }`}
                       sizeClass="w-8 h-8 sm:w-9 sm:h-9"
                     />
                     <span>{(nftItem as any)?.creator?.username}</span>

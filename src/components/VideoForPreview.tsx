@@ -9,12 +9,15 @@ interface VideoForNftProps {
   src?: string;
   className?: string;
   nftId: string;
+  containStrict?: boolean;
 }
 
 const VideoForPreview: FC<VideoForNftProps> = ({
   nftId,
   className = "absolute inset-0 z-20 flex items-center justify-center bg-neutral-700 rounded-3xl overflow-hidden",
   src = "./nft.mp4",
+  containStrict = false
+
 }) => {
   const renderContent = (newClass = "") => {
     return (
@@ -22,10 +25,15 @@ const VideoForPreview: FC<VideoForNftProps> = ({
         className={`${className} ${newClass} `}
         title="Play"
         dangerouslySetInnerHTML={{
-          __html: `<video className="w-full h-full" playsinline autoplay loop muted >
+          __html: containStrict ?
+            `<video class="w-full h-full " playsinline autoplay loop muted style="contain:strict">
                     <source src=${src} type="video/mp4" />
                     our browser does not support the video tag.
-                  </video>`,
+                  </video>`:
+            `<video class="w-full h-full " playsinline autoplay loop muted>
+                  <source src=${src} type="video/mp4" />
+                  our browser does not support the video tag.
+                </video>`,
         }}
       />
     );

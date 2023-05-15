@@ -9,6 +9,7 @@ import { useAppSelector } from "app/hooks";
 import { selectCurrentNetworkSymbol } from "app/reducers/auth.reducers";
 import { isSupportedEVMNetwork } from "InteractWithSmartContract/interact";
 import platformContractAbi from "InteractWithSmartContract/RizeNFTFactory.json";
+import parse from "html-react-parser";
 
 export default function AccordionInfo(props: any) {
   const currentNetworkSymbol = useAppSelector(selectCurrentNetworkSymbol);
@@ -81,7 +82,7 @@ export default function AccordionInfo(props: any) {
               className="px-4 pt-4 pb-2 text-sm text-neutral-500 dark:text-neutral-400"
               as="p"
             >
-              {description}
+              {parse(description || "")}
             </Disclosure.Panel>
           </>
         )}

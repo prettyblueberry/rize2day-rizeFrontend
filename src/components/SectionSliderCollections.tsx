@@ -23,41 +23,41 @@ const SectionSliderCollections: FC<SectionSliderCollectionsProps> = ({
   const id = useId();
   const UNIQUE_CLASS = "glidejs" + id.replace(/:/g, "_");
 
-  // useEffect(() => {
-  //   if (!sliderRef.current) {
-  //     return;
-  //   }
+  useEffect(() => {
+    if (!sliderRef.current) {
+      return;
+    }
 
-  //   const OPTIONS: Glide.Options = {
-  //     perView: 3,
-  //     gap: 32,
-  //     bound: true,
-  //     breakpoints: {
-  //       1280: {
-  //         gap: 28,
-  //         perView: 2.5,
-  //       },
-  //       1024: {
-  //         gap: 20,
-  //         perView: 2.15,
-  //       },
-  //       768: {
-  //         gap: 20,
-  //         perView: 1.5,
-  //       },
+    const OPTIONS: Glide.Options = {
+      perView: 3,
+      gap: 32,
+      bound: true,
+      breakpoints: {
+        1280: {
+          gap: 28,
+          perView: 2.5,
+        },
+        1024: {
+          gap: 20,
+          perView: 2.15,
+        },
+        768: {
+          gap: 20,
+          perView: 1.5,
+        },
 
-  //       500: {
-  //         gap: 20,
-  //         perView: 1,
-  //       },
-  //     },
-  //   };
+        500: {
+          gap: 20,
+          perView: 1,
+        },
+      },
+    };
 
-  //   let slider = new Glide(`.${UNIQUE_CLASS}`, OPTIONS);
-  //   slider.mount();
-  //   // @ts-ignore
-  //   return () => slider.destroy();
-  // }, [sliderRef, UNIQUE_CLASS]);
+    let slider = new Glide(`.${UNIQUE_CLASS}`, OPTIONS);
+    slider.mount();
+    // @ts-ignore
+    return () => slider.destroy();
+  }, [sliderRef, UNIQUE_CLASS]);
 
   const MyCollectionCard =
     cardStyle === "style1" ? CollectionCard : CollectionCard2;

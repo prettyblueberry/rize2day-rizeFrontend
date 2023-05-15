@@ -39,7 +39,7 @@ function App() {
   };
 
   return (
-    <div className="bg-white text-base dark:bg-[#191818] text-neutral-900 dark:text-neutral-200">
+    <div className="bg-white text-base min-h-screen dark:bg-[#191818] text-neutral-900 dark:text-neutral-200">
       <MyRouter mode={mode} />
     </div>
   );

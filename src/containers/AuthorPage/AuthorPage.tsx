@@ -15,6 +15,7 @@ import {
   changeDetailedUserInfo,
   selectCurrentUser,
   changeOtherUserInfo,
+  selectCurrentNetworkSymbol,
 } from "app/reducers/auth.reducers";
 import {
   changeFollow,
@@ -77,6 +78,7 @@ const socials: SocialType[] = [
 ];
 
 const AuthorPage: FC<AuthorPageProps> = ({ className = "" }) => {
+  const currentNetworkSymbol = useAppSelector(selectCurrentNetworkSymbol);
   const currentUsr = useAppSelector(selectCurrentUser);
   const [userSocials, setUerSocials] = useState(Array<SocialType>);
   const dispatch = useAppDispatch();
@@ -145,7 +147,7 @@ const AuthorPage: FC<AuthorPageProps> = ({ className = "" }) => {
         dispatch(changeIsExists(result.data.data));
         setIsLiked(result.data.data);
       })
-      .catch(() => { });
+      .catch(() => {});
   };
 
   const toggleFollow = async (my_id: string, target_id: string) => {
@@ -210,7 +212,7 @@ const AuthorPage: FC<AuthorPageProps> = ({ className = "" }) => {
         setFollowers(result.data.data || []);
         dispatch(changeFollowList(result.data.data || []));
       })
-      .catch(() => { });
+      .catch(() => {});
   };
 
   const getFollowingList = async (user_id: string, limit: number) => {
@@ -236,7 +238,7 @@ const AuthorPage: FC<AuthorPageProps> = ({ className = "" }) => {
           )
         );
       })
-      .catch(() => { });
+      .catch(() => {});
   };
 
   const getItemsOfUserByConditions = (
@@ -294,14 +296,18 @@ const AuthorPage: FC<AuthorPageProps> = ({ className = "" }) => {
         tempPlayList = simplePL;
         setDetailedPlayList(tempPlayList);
       })
-      .catch((err) => { });
+      .catch((err) => {});
   };
 
   const getCollections = async (limit, currentUserId) => {
     await axios
       .post(
         `${config.API_URL}api/collection/getUserCollections`,
-        { limit: limit, userId: currentUserId },
+        {
+          limit: limit,
+          userId: currentUserId,
+          connectedNetworkSymbol: currentNetworkSymbol,
+        },
         {
           headers: {
             "x-access-token": localStorage.getItem("jwtToken"),
@@ -312,7 +318,7 @@ const AuthorPage: FC<AuthorPageProps> = ({ className = "" }) => {
         setCollections(result.data.data);
         dispatch(changeCollectionList(result.data.data));
       })
-      .catch(() => { });
+      .catch(() => {});
   };
 
   useEffect(() => {
@@ -444,13 +450,13 @@ const AuthorPage: FC<AuthorPageProps> = ({ className = "" }) => {
                 </h2>
                 {detailedUserInfo?.address?.toLowerCase() ===
                   currentUsr?.address?.toLowerCase() && (
-                    <div className="flex items-center text-sm font-medium space-x-2.5 mt-2.5 text-green-600 cursor-pointer">
-                      <span className="text-neutral-700 dark:text-neutral-300">
-                        {detailedUserInfo?.address || " "}
-                      </span>
-                      <CopyButton data={currentUsr?.address} />
-                    </div>
-                  )}
+                  <div className="flex items-center text-sm font-medium space-x-2.5 mt-2.5 text-green-600 cursor-pointer">
+                    <span className="text-neutral-700 dark:text-neutral-300">
+                      {detailedUserInfo?.address || " "}
+                    </span>
+                    <CopyButton data={currentUsr?.address} />
+                  </div>
+                )}
                 <span className="block max-h-[100px] mt-4 text-sm text-neutral-500 dark:text-neutral-400 overflow-y-auto">
                   {detailedUserInfo?.userBio || ""}
                 </span>
@@ -495,10 +501,11 @@ const AuthorPage: FC<AuthorPageProps> = ({ className = "" }) => {
                   <Tab key={item} as={Fragment}>
                     {({ selected }) => (
                       <button
-                        className={`flex-shrink-0 block font-medium px-4 py-2 text-sm sm:px-6 sm:py-2.5 capitalize rounded-full focus:outline-none ${index === activeIndex
-                          ? "bg-neutral-900 dark:bg-neutral-100 text-neutral-50 dark:text-neutral-900"
-                          : "text-neutral-500 dark:text-neutral-400 dark:hover:text-neutral-100 hover:text-neutral-900 hover:bg-neutral-100/70 dark:hover:bg-neutral-800"
-                          } `}
+                        className={`flex-shrink-0 block font-medium px-4 py-2 text-sm sm:px-6 sm:py-2.5 capitalize rounded-full focus:outline-none ${
+                          index === activeIndex
+                            ? "bg-neutral-900 dark:bg-neutral-100 text-neutral-50 dark:text-neutral-900"
+                            : "text-neutral-500 dark:text-neutral-400 dark:hover:text-neutral-100 hover:text-neutral-900 hover:bg-neutral-100/70 dark:hover:bg-neutral-800"
+                        } `}
                         onClick={() => {
                           setActiveIndex(Number(index));
                         }}

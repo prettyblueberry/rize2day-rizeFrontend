@@ -23,6 +23,7 @@ import {
   CATEGORIES,
   PLATFORM_NETWORKS,
   ACTIVE_CHAINS,
+  COREUM_PAYMENT_COINS,
 } from "app/config";
 import {
   changeItemDetail,
@@ -61,7 +62,7 @@ import { Helmet } from "react-helmet";
 import { useSigningClient } from "app/cosmwasm";
 import { socket } from "App";
 import { getLongAddress } from "app/methods";
-import { getSystemTime } from "utils/utils";
+import { convertDenomToMicroDenom, getSystemTime } from "utils/utils";
 import NcModal from "shared/NcModal/NcModal";
 import { FILE_TYPE } from "app/config";
 import Clock from "./Clock/Clock";
@@ -114,6 +115,7 @@ const NftDetailPage: FC<NftDetailPageProps> = ({
   const [auctionEnded, setAuctionEnded] = useState(false);
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
+  const [curUnitPrice, setCurUnitPrice] = useState(0.0);
   const {
     listNFT,
     cancelSaleNFT,
@@ -121,6 +123,7 @@ const NftDetailPage: FC<NftDetailPageProps> = ({
     acceptSaleNFT,
     balances,
     fetchBalance,
+    bidNFT,
   }: any = useSigningClient();
 
   useEffect(() => {
@@ -140,6 +143,20 @@ const NftDetailPage: FC<NftDetailPageProps> = ({
       setSysTime(res);
     })();
   }, []);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      const response = await axios.post(
+        `${config.baseUrl}item/getCurrencyPrice`,
+        {
+          networkSymbol: globalDetailNFT.networkSymbol,
+        }
+      );
+      console.log("response =====> ", response);
+      setCurUnitPrice(parseFloat(response.data.priceOnUsd));
+    };
+    fetchData();
+  }, [globalDetailNFT]);
 
   const getNftDetail = async (id: string) => {
     await axios
@@ -301,15 +318,34 @@ const NftDetailPage: FC<NftDetailPageProps> = ({
     return true;
   };
 
-  const checkNativeCurrencyAndTokenBalances = async (tokenAmountShouldPay) => {
-    if (
-      balances[config.COIN_MINIMAL_DENOM] <= 0 ||
-      (tokenAmountShouldPay > 0 && balances.cw20 <= tokenAmountShouldPay)
-    ) {
-      toast.warn("Insufficient TESTCORE or USD");
-      return false;
+  const checkNativeCurrencyAndTokenBalances = async (
+    tokenAmountShouldPay,
+    denom
+  ) => {
+    if (denom == "native") {
+      if (
+        parseFloat(balances[config.COIN_MINIMAL_DENOM]) <= 0 ||
+        (parseFloat(tokenAmountShouldPay) > 0 &&
+          parseFloat(balances[config.COIN_MINIMAL_DENOM]) <=
+            parseFloat(convertDenomToMicroDenom(tokenAmountShouldPay)))
+      ) {
+        toast.warn("Insufficient CORE");
+        return false;
+      } else {
+        return true;
+      }
+    } else {
+      if (
+        parseFloat(balances[config.COIN_MINIMAL_DENOM]) <= 0 ||
+        (parseFloat(tokenAmountShouldPay) > 0 &&
+          parseFloat(balances.cw20) <= parseFloat(tokenAmountShouldPay))
+      ) {
+        toast.warn("Insufficient CORE or RIZE");
+        return false;
+      } else {
+        return true;
+      }
     }
-    return true;
   };
 
   const getLeftDuration = (created: number, period: number, time: number) => {
@@ -352,43 +388,86 @@ const NftDetailPage: FC<NftDetailPageProps> = ({
         else toast.error((result as any).message);
       }
       if (currentNetworkSymbol === PLATFORM_NETWORKS.COREUM) {
-        let balanceCheck = await checkNativeCurrencyAndTokenBalances(bidPrice);
+        let balanceCheck = await checkNativeCurrencyAndTokenBalances(
+          bidPrice,
+          "native"
+        );
         if (!balanceCheck) {
           setProcessing(false);
           return;
         }
-        try {
-          let txHash = await sendToken(
-            currentUsr.address,
-            bidPrice,
-            globalDetailNFT.tokenId,
-            globalDetailNFT.collection_id.address
-          );
-          if (txHash == -1) {
-            toast.error("Blockchian network error.");
-          } else {
-            axios
-              .post(`${config.API_URL}api/item/placeAbid`, {
-                itemId: globalDetailNFT._id,
-                bidder: currentUsr.address,
-                price: bidPrice,
-              })
-              .then((response) => {
-                if (response.data.code == 0) {
-                  toast.success("Successfully placed a bid.");
-                  getNftDetail(tokenId || "");
-                } else {
+        if (globalDetailNFT.coreumPaymentUnit === COREUM_PAYMENT_COINS.CORE) {
+          try {
+            //if payment coin is CORE
+            let txHash = await bidNFT(
+              currentUsr.address,
+              globalDetailNFT.collection_id.address,
+              globalDetailNFT.tokenId,
+              config.COIN_MINIMAL_DENOM,
+              bidPrice
+            );
+            if (txHash == -1) {
+              toast.error("Blockchian network error.");
+            } else {
+              axios
+                .post(`${config.API_URL}api/item/placeAbid`, {
+                  itemId: globalDetailNFT._id,
+                  bidder: currentUsr.address,
+
+                  price: bidPrice,
+                })
+                .then((response) => {
+                  if (response.data.code == 0) {
+                    toast.success("Successfully placed a bid.");
+                    getNftDetail(tokenId || "");
+                  } else {
+                    toast.error("Server side error.");
+                  }
+                })
+                .catch((error) => {
+                  console.log(">>>", error);
                   toast.error("Server side error.");
-                }
-              })
-              .catch((error) => {
-                console.log(">>>", error);
-                toast.error("Server side error.");
-              });
+                });
+            }
+          } catch (error) {
+            console.log(error);
+            toast.error("Transactioin failed.");
           }
-        } catch (error) {
-          console.log(error);
-          toast.error("Transactioin failed.");
+        } else {
+          try {
+            //if payment token is RIZE
+            let txHash = await sendToken(
+              currentUsr.address,
+              bidPrice,
+              globalDetailNFT.tokenId,
+              globalDetailNFT.collection_id.address
+            );
+            if (txHash == -1) {
+              toast.error("Blockchian network error.");
+            } else {
+              axios
+                .post(`${config.API_URL}api/item/placeAbid`, {
+                  itemId: globalDetailNFT._id,
+                  bidder: currentUsr.address,
+                  price: bidPrice,
+                })
+                .then((response) => {
+                  if (response.data.code == 0) {
+                    toast.success("Successfully placed a bid.");
+                    getNftDetail(tokenId || "");
+                  } else {
+                    toast.error("Server side error.");
+                  }
+                })
+                .catch((error) => {
+                  console.log(">>>", error);
+                  toast.error("Server side error.");
+                });
+            }
+          } catch (error) {
+            console.log(error);
+            toast.error("Transactioin failed.");
+          }
         }
       }
     }
@@ -422,45 +501,84 @@ const NftDetailPage: FC<NftDetailPageProps> = ({
     }
     if (currentNetworkSymbol === PLATFORM_NETWORKS.COREUM) {
       let balanceCheck = await checkNativeCurrencyAndTokenBalances(
-        globalDetailNFT.price
+        globalDetailNFT.price,
+        "native"
       );
       if (!balanceCheck) {
         setProcessing(false);
         return;
       }
-      try {
-        let txHash = await sendToken(
-          currentUsr.address,
-          globalDetailNFT.price,
-          globalDetailNFT.tokenId,
-          globalDetailNFT.collection_id.address
-        );
-        if (txHash == -1) {
-          toast.error("Blockchian network error.");
-        } else {
-          axios
-            .post(`${config.API_URL}api/item/buynow`, {
-              itemId: globalDetailNFT._id,
-              buyer: currentUsr.address,
-              seller: globalDetailNFT.owner?.address,
-              price: globalDetailNFT.price,
-            })
-            .then((response) => {
-              if (response.data.code == 0) {
-                toast.success("Successfully bought an item.");
-                getNftDetail(tokenId || "");
-              } else {
+      if (globalDetailNFT.coreumPaymentUnit === COREUM_PAYMENT_COINS.CORE) {
+        try {
+          let txHash = await bidNFT(
+            currentUsr.address,
+            globalDetailNFT.collection_id.address,
+            globalDetailNFT.tokenId,
+            config.COIN_MINIMAL_DENOM,
+            globalDetailNFT.price
+          );
+          if (txHash == -1) {
+            toast.error("Blockchian network error.");
+          } else {
+            axios
+              .post(`${config.API_URL}api/item/buynow`, {
+                itemId: globalDetailNFT._id,
+                buyer: currentUsr.address,
+                seller: globalDetailNFT.owner?.address,
+                price: globalDetailNFT.price,
+              })
+              .then((response) => {
+                if (response.data.code == 0) {
+                  toast.success("Successfully bought an item.");
+                  getNftDetail(tokenId || "");
+                } else {
+                  toast.error("Server side error.");
+                }
+              })
+              .catch((error) => {
+                console.log(" >>>> ", error);
                 toast.error("Server side error.");
-              }
-            })
-            .catch((error) => {
-              console.log(" >>>> ", error);
-              toast.error("Server side error.");
-            });
+              });
+          }
+        } catch (error) {
+          console.log(error);
+          toast.error("Transactioin failed.");
         }
-      } catch (error) {
-        console.log(error);
-        toast.error("Transactioin failed.");
+      } else {
+        try {
+          let txHash = await sendToken(
+            currentUsr.address,
+            globalDetailNFT.price,
+            globalDetailNFT.tokenId,
+            globalDetailNFT.collection_id.address
+          );
+          if (txHash == -1) {
+            toast.error("Blockchian network error.");
+          } else {
+            axios
+              .post(`${config.API_URL}api/item/buynow`, {
+                itemId: globalDetailNFT._id,
+                buyer: currentUsr.address,
+                seller: globalDetailNFT.owner?.address,
+                price: globalDetailNFT.price,
+              })
+              .then((response) => {
+                if (response.data.code == 0) {
+                  toast.success("Successfully bought an item.");
+                  getNftDetail(tokenId || "");
+                } else {
+                  toast.error("Server side error.");
+                }
+              })
+              .catch((error) => {
+                console.log(" >>>> ", error);
+                toast.error("Server side error.");
+              });
+          }
+        } catch (error) {
+          console.log(error);
+          toast.error("Transactioin failed.");
+        }
       }
     }
     getNftDetail(tokenId || "");
@@ -515,12 +633,16 @@ const NftDetailPage: FC<NftDetailPageProps> = ({
     }
     if (currentNetworkSymbol === PLATFORM_NETWORKS.COREUM) {
       try {
-        let balanceCheck = await checkNativeCurrencyAndTokenBalances(price);
-        if (!balanceCheck) {
-          setProcessing(false);
-          return;
-        }
-
+        // let balanceCheck = await checkNativeCurrencyAndTokenBalances(price, "native");
+        // if (!balanceCheck) {
+        //   setProcessing(false);
+        //   return;
+        // }
+        let denormArg;
+        denormArg =
+          globalDetailNFT.coreumPaymentUnit === COREUM_PAYMENT_COINS.CORE
+            ? { native: config.COIN_MINIMAL_DENOM }
+            : { cw20: config.CW20_CONTRACT };
         let txhash = await listNFT(
           currentUsr.address,
           globalDetailNFT.collection_id.cw721address,
@@ -535,7 +657,7 @@ const NftDetailPage: FC<NftDetailPageProps> = ({
             : "Fixed",
           price,
           price,
-          config.COIN_MINIMAL_DENOM,
+          denormArg,
           globalDetailNFT.tokenId,
           globalDetailNFT.collection_id.address
         );
@@ -616,12 +738,11 @@ const NftDetailPage: FC<NftDetailPageProps> = ({
       );
       if ((result as any).success === true) {
         toast.success((result as any).message);
-
-        navigate("/page-author/" + currentUsr?._id);
+        navigate(`/collectionItems/${globalDetailNFT?.collection_id || ""}`);
       } else toast.error((result as any).message);
     }
     if (currentNetworkSymbol === PLATFORM_NETWORKS.COREUM) {
-      let balanceCheck = await checkNativeCurrencyAndTokenBalances(0);
+      let balanceCheck = await checkNativeCurrencyAndTokenBalances(0, "native");
       if (!balanceCheck) {
         setProcessing(false);
         return;
@@ -679,7 +800,7 @@ const NftDetailPage: FC<NftDetailPageProps> = ({
       } else toast.error((result as any).message);
     }
     if (currentNetworkSymbol === PLATFORM_NETWORKS.COREUM) {
-      let balanceCheck = await checkNativeCurrencyAndTokenBalances(0);
+      let balanceCheck = await checkNativeCurrencyAndTokenBalances(0, "native");
       if (!balanceCheck) {
         setProcessing(false);
         return;
@@ -853,27 +974,33 @@ const NftDetailPage: FC<NftDetailPageProps> = ({
                 className="text-3xl font-semibold text-green-500 xl:text-4xl"
                 item={globalDetailNFT}
               />
-              <span className="text-lg text-neutral-400 sm:ml-5">
-                {globalDetailNFT?.isSale == 2
-                  ? `( ≈ $ ${
-                      globalDetailNFT.bids && globalDetailNFT.bids.length > 0
-                        ? globalDetailNFT.bids[globalDetailNFT.bids.length - 1]
-                            .price
-                          ? (
-                              globalDetailNFT.bids[
-                                globalDetailNFT.bids.length - 1
-                              ].price * globalCOREPrice
-                            )?.toFixed(2)
-                          : 0
-                        : (globalDetailNFT?.price * globalCOREPrice)?.toFixed(
-                            2
-                          ) || 0
-                    } )`
-                  : `( ≈ $ ${
-                      (globalDetailNFT?.price * globalCOREPrice)?.toFixed(2) ||
-                      0
-                    })`}
-              </span>
+              {globalDetailNFT.isSale > 0 && (
+                <span className="text-lg text-neutral-400 sm:ml-5">
+                  {globalDetailNFT?.isSale == 2
+                    ? `( ≈ $ ${
+                        globalDetailNFT.bids && globalDetailNFT.bids.length > 0
+                          ? globalDetailNFT.bids[
+                              globalDetailNFT.bids.length - 1
+                            ].price
+                            ? (globalDetailNFT.networkSymbol ===
+                              PLATFORM_NETWORKS.COREUM
+                                ? globalDetailNFT.bids[
+                                    globalDetailNFT.bids.length - 1
+                                  ].price * globalCOREPrice
+                                : globalDetailNFT.bids[
+                                    globalDetailNFT.bids.length - 1
+                                  ].price * curUnitPrice
+                              )?.toFixed(2)
+                            : 0
+                          : (globalDetailNFT?.price * curUnitPrice)?.toFixed(
+                              2
+                            ) || 0
+                      } )`
+                    : `( ≈ $ ${
+                        (globalDetailNFT?.price * curUnitPrice)?.toFixed(2) || 0
+                      })`}
+                </span>
+              )}
             </div>
 
             {/* <span className="mt-2 ml-5 text-sm text-neutral-500 dark:text-neutral-400 sm:mt-0 sm:ml-10">
@@ -1084,6 +1211,7 @@ const NftDetailPage: FC<NftDetailPageProps> = ({
                     }
                     nftId={globalDetailNFT?._id || DEMO_NFT_ID}
                     className="aspect-w-11 aspect-h-12 rounded-3xl overflow-hidden"
+                    containStrict={true}
                   />
                 )}
                 {globalDetailNFT.fileType === FILE_TYPE.THREED && (
@@ -1145,13 +1273,13 @@ const NftDetailPage: FC<NftDetailPageProps> = ({
                     increaseFunc={plusPlayCount}
                   />
                 )}
-                {globalDetailNFT.fileType >= 2 && (
+                {/* {globalDetailNFT.fileType >= 2 && (
                   <div
                     className={`absolute z-10 bottom-3 right-3 bg-black/50 px-3.5 h-10 flex items-center justify-center rounded-full text-white ${className}`}
                   >
                     {globalDetailNFT?.playCount || 0}
                   </div>
-                )}
+                )} */}
               </div>
 
               <AccordionInfo

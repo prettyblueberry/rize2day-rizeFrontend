@@ -25,21 +25,31 @@ const Checkout = ({ className = "", onOk, onCancel, items = [], nft = {} }) => {
       </div>
 
       {nft?.collection_id?.terms && (
-        <div className="flex items-center mt-2">
-          <Checkbox
-            checked={terms}
-            onChange={handleTerms}
-            inputProps={{ "aria-label": "controlled", color: "white" }}
-          />
-          <p>
-            Accept this Collections{" "}
-            <span
-              className="text-blue-500 underline underline-offset-4 cursor-pointer"
-              onClick={() => setTermsModal(true)}
-            >
-              Terms and Conditions
-            </span>
-          </p>
+        <div className="flex items-center mt-2 flex-col w-full">
+          {/* <textarea
+            type="text"
+            classsName="overflow-y-auto multiple "
+            rows="5"
+            cols="30"
+            disabled={true}
+            value={nft?.collection_id?.terms || ""}
+          /> */}
+          <div className="flex items-center">
+            <Checkbox
+              checked={terms}
+              onChange={handleTerms}
+              inputProps={{ "aria-label": "controlled", color: "white" }}
+            />
+            <p className="text-sm">
+              Accept this collection{" "}
+              <span
+                className="text-blue-500 underline underline-offset-4 cursor-pointer"
+                onClick={() => setTermsModal(true)}
+              >
+                Terms and Conditions
+              </span>
+            </p>
+          </div>
         </div>
       )}
 
@@ -49,14 +59,14 @@ const Checkout = ({ className = "", onOk, onCancel, items = [], nft = {} }) => {
           onClick={onOk}
           disabled={nft?.collection_id?.terms ? !terms : false}
         >
-          I understand, continue
+          Buy now
         </ButtonPrimary>
-        <ButtonPrimary
-          className={cn("button", styles.button)}
+        <button
+          className="bg-transparent text-[#33FF00] border-2 rounded-lg border-[#33FF00] w-full py-4"
           onClick={onCancel}
         >
           Cancel
-        </ButtonPrimary>
+        </button>
       </div>
       <NcModal
         isOpenProp={termsModal}

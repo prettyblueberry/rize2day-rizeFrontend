@@ -92,7 +92,7 @@ const Footer: React.FC = () => {
 
   return (
     <div className="nc-Footer relative dark:bg-[#131313] pt-0 pb-4">
-      <div className="container">
+      <div className="px-4">
         <div className="flex flex-col md:flex-row items-center md:items-end justify-center md:justify-between pb-4 border-b border-neutral-200 dark:border-neutral-600">
           <div className="flex flex-col">
             <div className="flex items-end pt-6 pb-4 gap-4">

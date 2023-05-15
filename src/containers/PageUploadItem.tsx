@@ -29,7 +29,7 @@ import {
 } from "app/reducers/auth.reducers";
 import { Navigate, useNavigate } from "react-router-dom";
 import { isEmpty } from "app/methods";
-import { config, PLATFORM_NETWORKS } from "app/config.js";
+import { config, COREUM_PAYMENT_COINS, PLATFORM_NETWORKS } from "app/config.js";
 import {
   changeTradingResult,
   selectCurrentTradingResult,
@@ -52,6 +52,10 @@ import {
 } from "InteractWithSmartContract/interact";
 import Web3 from "web3";
 import { parseBlob } from "music-metadata-browser";
+import { EditorState, convertToRaw } from "draft-js";
+import { Editor } from "react-draft-wysiwyg";
+import draftToHtml from "draftjs-to-html";
+import "react-draft-wysiwyg/dist/react-draft-wysiwyg.css";
 
 export interface PageUploadItemProps {
   className?: string;
@@ -92,6 +96,11 @@ const fileCategories = [
   { value: 4, text: "3D file" },
 ];
 
+const coreumPaymentUnits = [
+  { value: COREUM_PAYMENT_COINS.CORE, text: "CORE" },
+  { value: COREUM_PAYMENT_COINS.RIZE, text: "RIZE" },
+];
+
 const PageUploadItem: FC<PageUploadItemProps> = ({ className = "" }) => {
   const consideringCollectionId = useAppSelector(selectConsideringCollectionId);
   const currentUsr = useAppSelector(selectCurrentUser);
@@ -105,6 +114,7 @@ const PageUploadItem: FC<PageUploadItemProps> = ({ className = "" }) => {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
 
+  const [editorState, setEditorState] = useState(EditorState.createEmpty());
   const [sale, setSale] = useState(false);
   const [selected, setSelected] = useState({ name: "", _id: "", address: "" });
   const [selectedFileName, setSelectedFileName] = useState("");
@@ -129,6 +139,9 @@ const PageUploadItem: FC<PageUploadItemProps> = ({ className = "" }) => {
   const [stockAmount, setStockAmount] = useState(1);
   const [timeLength, setTimeLength] = useState(0);
   const [working, setWorking] = useState(false);
+  const [coreumPaymentCoin, setCoreumPaymentCoin] = useState(
+    COREUM_PAYMENT_COINS.CORE
+  );
   const [auctionEndTime, setAuctionEndTime] = useState<Date | null>(new Date());
   const { mintNFT, collectionConfig, balances }: any = useSigningClient();
   const [fileCategory, setFileCategory] = useState(1); //0: image, 1: music, 2: video
@@ -185,7 +198,11 @@ const PageUploadItem: FC<PageUploadItemProps> = ({ className = "" }) => {
       axios
         .post(
           `${config.API_URL}api/collection/getUserCollections`,
-          { limit: 90, userId: currentUsr?._id },
+          {
+            limit: 90,
+            userId: currentUsr?._id,
+            connectedNetworkSymbol: currentNetworkSymbol,
+          },
           {
             headers: {
               "x-access-token": localStorage.getItem("jwtToken"),
@@ -223,6 +240,13 @@ const PageUploadItem: FC<PageUploadItemProps> = ({ className = "" }) => {
       }
     }
   }, [tradingResult]);
+
+  const onEditorStateChange = (editorState) => {
+    setEditorState(editorState);
+    setTextDescription(
+      draftToHtml(convertToRaw(editorState.getCurrentContent())) || ""
+    );
+  };
 
   const onChangePrice = (e: any) => {
     var inputedPrice = e.target.value;
@@ -297,7 +321,7 @@ const PageUploadItem: FC<PageUploadItemProps> = ({ className = "" }) => {
       balances[config.COIN_MINIMAL_DENOM] <= 0 ||
       (tokenAmountShouldPay > 0 && balances.cw20 <= tokenAmountShouldPay)
     ) {
-      toast.warn("Insufficient TESTCORE or USD");
+      toast.warn("Insufficient CORE or RIZE");
       return false;
     }
     return true;
@@ -707,6 +731,7 @@ const PageUploadItem: FC<PageUploadItemProps> = ({ className = "" }) => {
         chainId: currentNetworkSymbol || 0,
         metadataURI: uriHash,
         networkSymbol: currentNetworkSymbol || 0,
+        coreumPaymentUnit: coreumPaymentCoin,
       };
       await saveItem(params);
     } catch (error) {
@@ -794,7 +819,7 @@ const PageUploadItem: FC<PageUploadItemProps> = ({ className = "" }) => {
             </div>
             <div className="w-full border-b-2 border-neutral-100 dark:border-neutral-600"></div>
             <h3 className="text-lg font-semibold sm:text-2xl ">
-              File category
+              Item category
             </h3>
             <div className=" overflow-hidden rounded-2xl shadow-xl bg-white dark:bg-[#191818] border border-neutral-200 dark:border-neutral-600">
               <div className="relative flex px-5 py-6 space-x-10 justify-around">
@@ -955,7 +980,52 @@ const PageUploadItem: FC<PageUploadItemProps> = ({ className = "" }) => {
                   </div>
                 </div>
               )}
-              <FormItem label="Item Name">
+              {currentNetworkSymbol === PLATFORM_NETWORKS.COREUM && (
+                <>
+                  <h3 className="text-lg font-semibold sm:text-2xl ">
+                    Payment coin/token
+                  </h3>
+                  <div className=" overflow-hidden rounded-2xl shadow-xl bg-white dark:bg-[#191818] border border-neutral-200 dark:border-neutral-600">
+                    <div className="relative flex px-5 py-6 space-x-10 justify-around">
+                      {/* {coreumPaymentUnits.map((item, index) => {
+                        return (
+                          <div key={index} className=""> */}
+                      <Radio
+                        id={"CORE"}
+                        name="coreumPaymentCoins"
+                        label={"CORE"}
+                        defaultChecked={
+                          coreumPaymentCoin === COREUM_PAYMENT_COINS.CORE
+                        }
+                        onChange={(checked) => {
+                          if (Boolean(checked) == true)
+                            setCoreumPaymentCoin(COREUM_PAYMENT_COINS.CORE);
+                        }}
+                      />
+                      <Radio
+                        id={"RIZE"}
+                        name="coreumPaymentCoins"
+                        label={"RIZE"}
+                        defaultChecked={
+                          coreumPaymentCoin === COREUM_PAYMENT_COINS.RIZE
+                        }
+                        disabled={true}
+                        onChange={(checked) => {
+                          if (Boolean(checked) == true)
+                            setCoreumPaymentCoin(COREUM_PAYMENT_COINS.RIZE);
+                        }}
+                      />
+                      {/* </div>
+                        );
+                      })} */}
+                    </div>
+                  </div>
+                </>
+              )}
+              <FormItem
+                label="Item Name"
+                className="!text-lg !font-semibold sm:!text-2xl "
+              >
                 <Input
                   value={textName}
                   onChange={(e) => setTextName(e.target.value)}
@@ -966,19 +1036,16 @@ const PageUploadItem: FC<PageUploadItemProps> = ({ className = "" }) => {
                 label="Description"
                 desc={
                   <div>
-                    The description will be included on the nft's detail page, 
+                    The description will be included on the nft's detail page,
                     underneath its image.
                   </div>
                 }
               >
-                <Textarea
-                  rows={6}
-                  className="mt-1.5"
-                  placeholder="..."
-                  value={textDescription}
-                  onChange={(event) => {
-                    setTextDescription(event.target.value);
-                  }}
+                <Editor
+                  editorState={editorState}
+                  wrapperClassName="demo-wrapper mt-1.5 "
+                  editorClassName="demo-editor min-h-[300px] border-2 rounded-lg border-neutral-100 dark:border-neutral-400 "
+                  onEditorStateChange={onEditorStateChange}
                 />
               </FormItem>
 

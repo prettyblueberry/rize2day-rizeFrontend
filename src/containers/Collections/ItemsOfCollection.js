@@ -25,6 +25,10 @@ import {
 import { Helmet } from "react-helmet";
 import SelectBox from "components/SelectBox";
 import BoolBox from "components/BoolBox";
+import { getItemPriceUnitText } from "containers/NftDetailPage/ItemPriceUnitText";
+import VideoForBannerPreview from "components/VideoForBannerPreview";
+import { nanoid } from "@reduxjs/toolkit";
+import parse from "html-react-parser";
 
 const SlickArrow = ({ currentSlide, slideCount, children, ...props }) => (
   <button {...props}>{children}</button>
@@ -41,12 +45,16 @@ const ItemsOfCollection = () => {
   const [start, setStart] = useState(0);
   const [last, setLast] = useState(8);
   const [metaData, setMetaData] = useState([]);
+  const [DEMO_NFT_ID] = React.useState(nanoid());
   // const collectionId = useSelector(state => state.collection.consideringId);
   const [viewNoMore, setViewNoMore] = useState(false);
   const [metaList, setMetaList] = useState([]);
   const [all, setAll] = useState(true);
   const [refresh, setRefresh] = useState(false);
   const { collectionId } = useParams();
+  const [collectionMinPrice, setCollectionMinPrice] = useState(
+    collection.price
+  );
 
   const settings = {
     infinite: true,
@@ -75,6 +83,19 @@ const ItemsOfCollection = () => {
         settings: "unslick",
       },
     ],
+  };
+
+  const isVideo = (fileName) => {
+    let result = false;
+    if (fileName && fileName.toString() !== "") {
+      if (
+        fileName.toString().includes("mp4") === true ||
+        fileName.toString().includes("MP4") === true
+      ) {
+        result = true;
+      }
+    }
+    return result;
   };
 
   useEffect(() => {
@@ -135,6 +156,7 @@ const ItemsOfCollection = () => {
         }
 
         setItems(result.data.data);
+
         // if (start === 0) {
         //   setItems(result.data.data);
         // } else {
@@ -150,7 +172,42 @@ const ItemsOfCollection = () => {
       })
       .catch(() => {});
   };
-  console.log(">>>>>", metaList);
+
+  useEffect(() => {
+    let isCollectionOnSale = false;
+    for (let idx = 0; idx < items.length; idx++) {
+      if (items[idx].isSale > 0) {
+        isCollectionOnSale = true;
+        return;
+      }
+    }
+    if (isCollectionOnSale === true) {
+      let minPrice = collection.price;
+
+      if (items[0]?.isSale == 2) {
+        if (items[0].bids && items[0].bids.length > 0) {
+          minPrice = items[0].bids[items[0].bids.length - 1].price;
+        }
+      } else {
+        minPrice = items[0]?.price;
+      }
+
+      for (let i = 1; i < items.length; i++) {
+        if (items[i].isSale == 2) {
+          if (items[i].bids && items[i].bids.length > 0) {
+            if (minPrice > items[i].bids[items[i].bids.length - 1].price)
+              minPrice = items[i].bids[items[i].bids.length - 1].price;
+          }
+        } else {
+          if (minPrice > items[i].price) minPrice = items[i].price;
+        }
+      }
+      setCollectionMinPrice(minPrice);
+    } else {
+      setCollectionMinPrice(0);
+    }
+  }, [items]);
+
   const handleChangeFilter = (value, index) => {
     if (metaList.length > index) {
       const temp = metaList;
@@ -186,7 +243,7 @@ const ItemsOfCollection = () => {
             height: "300px",
           }}
         >
-          {collection && collection.bannerURL !== "" && (
+          {isVideo(collection?.bannerURL || "") !== true ? (
             <img
               style={{
                 position: "absolute",
@@ -197,6 +254,14 @@ const ItemsOfCollection = () => {
               src={`${config.API_URL}uploads/${collection.bannerURL}`}
               alt="Banner"
             />
+          ) : (
+            <div className="w-full flex justify-center">
+              <VideoForBannerPreview
+                src={`${config.API_URL}uploads/${collection.bannerURL}`}
+                nftId={DEMO_NFT_ID}
+                className="h-full absolute z-5"
+              />
+            </div>
           )}
           <div
             className={styles.logoImg}
@@ -248,15 +313,16 @@ const ItemsOfCollection = () => {
           className={styles.collectionFloorPrice}
           style={{ textAlign: "center" }}
         >
-          {collection && collection.price
-            ? "Floor price : " + collection.price + " USD"
-            : "Floor price : 0 " + " USD"}
+          {collection && collectionMinPrice
+            ? "Floor price : " + collectionMinPrice + " "
+            : "Floor price : 0 "}
+          {getItemPriceUnitText(collection)}
         </div>
         <div
           className={styles.collectionDescription}
-          style={{ textAlign: "center" }}
+          style={{ textAlign: "center", marginTop: "15px" }}
         >
-          {collection && collection.description}
+          {collection && parse(collection.description || "")}
         </div>
         <div className="flex justify-end py-2 gap-4">
           {currentUsr && currentUsr?._id === collection?.owner?._id && (

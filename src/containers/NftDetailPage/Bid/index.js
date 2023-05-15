@@ -133,8 +133,8 @@ const Bid = ({ className = "", onOk, onCancel, nft = {} }) => {
             onChange={handleTerms}
             inputProps={{ "aria-label": "controlled", color: "white" }}
           />
-          <p>
-            Accept this Collections{" "}
+          <p className="text-sm">
+            Accept this Collection{" "}
             <span
               className="text-blue-500 underline underline-offset-4 cursor-pointer"
               onClick={() => setTermsModal(true)}
@@ -153,12 +153,13 @@ const Bid = ({ className = "", onOk, onCancel, nft = {} }) => {
         >
           Place a bid
         </ButtonPrimary>
-        <ButtonPrimary
-          className={cn("button", styles.button)}
+
+        <button
+          className="bg-transparent text-[#33FF00] border-2 rounded-lg border-[#33FF00] w-full py-4"
           onClick={onCancel}
         >
           Cancel
-        </ButtonPrimary>
+        </button>
       </div>
       <NcModal
         isOpenProp={termsModal}

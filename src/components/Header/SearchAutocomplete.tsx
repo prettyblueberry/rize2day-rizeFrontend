@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import axios from 'axios';
 import Input from "shared/Input/Input";
 import NcImage from "shared/NcImage/NcImage";
@@ -11,13 +11,19 @@ import ItemTypeAudioIcon from 'components/ItemTypeAudioIcon';
 import ItemTypeVideoIcon from 'components/ItemTypeVideoIcon';
 import ItemType3DIcon from 'components/ItemType3DIcon';
 import { FILE_TYPE, config } from 'app/config';
+import { useSigningClient } from "app/cosmwasm";
+import FilterIcon from '../../images/icons/filter.svg';
+import FilterBlackIcon from '../../images/icons/filter-black.svg';
 
 const SearchAutocomplete = () => {
   const [searchInput, setSearchInput] = useState("");
   const [collections, setCollections] = useState([]);
   const [items, setItems] = useState([]);
   const [users, setUsers] = useState([]);
+  const { isOpenFilter, setOpenFilter }: any = useSigningClient();
+
   const navigate = useNavigate();
+  const location = useLocation();
 
   const fetchData = async (query: String) => {
     try {
@@ -64,12 +70,16 @@ const SearchAutocomplete = () => {
     handleClear();
   }
 
+  const handlefilter = () => {
+    setOpenFilter(!isOpenFilter)
+  };
+
   return (
-    <div className="max-w-xl w-full">
-      <div className="relative max-w-xl">
+    <div className="max-w-lg w-full">
+      <div className="relative hidden md:flex max-w-lg w-full items-center gap-2">
         <label
           htmlFor="search-input"
-          className="text-neutral-500 dark:text-neutral-300"
+          className="relative text-neutral-500 dark:text-neutral-300 w-full"
         >
           <Input
             className="shadow-lg border-0 dark:border"
@@ -87,9 +97,16 @@ const SearchAutocomplete = () => {
             </IconButton>
           )}
           <span className="absolute left-5 top-1/2 transform -translate-y-1/2 text-2xl md:left-6">
-            <AiOutlineSearch />
+            <AiOutlineSearch color={'#33ff00'} />
           </span>
         </label>
+        {location?.pathname === '/page-search' && (
+          <div className="cursor-pointer">
+            <img className='hidden dark:block' src={FilterIcon} onClick={handlefilter} />
+            <img className='block dark:hidden' src={FilterBlackIcon} onClick={handlefilter} />
+          </div>
+        )}
+
         {searchInput && (
           <div className="absolute w-full h-fit max-h-[50vh] overflow-y-auto top-[50px] rounded-2xl bg-white dark:bg-neutral-800 px-2 py-2">
             {collections.length === 0 && items.length === 0 && users.length === 0 && (

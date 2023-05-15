@@ -1,6 +1,6 @@
 import Label from "components/Label/Label";
 import styles from "../containers/Collections/UploadDetails.module.sass";
-import React, { FC, useState, useEffect } from "react";
+import React, { FC, useState, useEffect, useRef } from "react";
 import ButtonPrimary from "shared/Button/ButtonPrimary";
 import Input from "shared/Input/Input";
 import Textarea from "shared/Textarea/Textarea";
@@ -11,6 +11,9 @@ import { nftsImgs } from "contains/fakeData";
 import MySwitch from "components/MySwitch";
 import axios from "axios";
 import ButtonSecondary from "shared/Button/ButtonSecondary";
+import { GrValidate } from "react-icons/gr";
+import { GoCloudUpload } from "react-icons/go";
+import { AiOutlineDelete } from "react-icons/ai";
 import NcImage from "shared/NcImage/NcImage";
 import { useAppDispatch, useAppSelector } from "app/hooks";
 import {
@@ -29,7 +32,7 @@ import {
 } from "app/reducers/auth.reducers";
 import { Navigate, useNavigate } from "react-router-dom";
 import { isEmpty, hasKey } from "app/methods";
-import { config, PLATFORM_NETWORKS } from "app/config.js";
+import { config, COREUM_PAYMENT_COINS, PLATFORM_NETWORKS } from "app/config.js";
 import {
   changeTradingResult,
   selectCurrentTradingResult,
@@ -50,6 +53,10 @@ import {
   isSupportedEVMNetwork,
   isSupportedNetwork,
 } from "InteractWithSmartContract/interact";
+import { EditorState, convertToRaw } from "draft-js";
+import { Editor } from "react-draft-wysiwyg";
+import draftToHtml from "draftjs-to-html";
+import "react-draft-wysiwyg/dist/react-draft-wysiwyg.css";
 
 const DEFAULT_SCHEMA = {
   attributes: [],
@@ -94,6 +101,11 @@ const fileCategories = [
   { value: 4, text: "3D file" },
 ];
 
+const coreumPaymentUnits = [
+  { value: COREUM_PAYMENT_COINS.CORE, text: "CORE" },
+  { value: COREUM_PAYMENT_COINS.RIZE, text: "RIZE" },
+];
+
 const PageUploadItem: FC<PageUploadItemProps> = ({ className = "" }) => {
   const consideringCollectionId = useAppSelector(selectConsideringCollectionId);
   const currentUsr = useAppSelector(selectCurrentUser);
@@ -104,9 +116,11 @@ const PageUploadItem: FC<PageUploadItemProps> = ({ className = "" }) => {
   const walletStatus = useAppSelector(selectWalletStatus);
   const globalProvider = useAppSelector(selectGlobalProvider);
   const currentNetworkSymbol = useAppSelector(selectCurrentNetworkSymbol);
+  const fileInputRef = useRef(null);
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
 
+  const [editorState, setEditorState] = useState(EditorState.createEmpty());
   const [sale, setSale] = useState(false);
   const [selected, setSelected] = useState({ name: "", _id: "", address: "" });
   const [selectedFileName, setSelectedFileName] = useState("");
@@ -129,6 +143,9 @@ const PageUploadItem: FC<PageUploadItemProps> = ({ className = "" }) => {
   const [sel_JsonFiles, setSelJsonFiles] = useState([]);
   const [stockAmount, setStockAmount] = useState(1);
   const [timeLength, setTimeLength] = useState(0);
+  const [coreumPaymentCoin, setCoreumPaymentCoin] = useState(
+    COREUM_PAYMENT_COINS.CORE
+  );
   const [working, setWorking] = useState(false);
   const [auctionEndTime, setAuctionEndTime] = useState<Date | null>(new Date());
   const { mintNFT, collectionConfig, batchMint, balances }: any =
@@ -193,7 +210,11 @@ const PageUploadItem: FC<PageUploadItemProps> = ({ className = "" }) => {
       axios
         .post(
           `${config.API_URL}api/collection/getUserCollections`,
-          { limit: 90, userId: currentUsr?._id },
+          {
+            limit: 90,
+            userId: currentUsr?._id,
+            connectedNetworkSymbol: currentNetworkSymbol,
+          },
           {
             headers: {
               "x-access-token": localStorage.getItem("jwtToken"),
@@ -285,7 +306,7 @@ const PageUploadItem: FC<PageUploadItemProps> = ({ className = "" }) => {
       balances[config.COIN_MINIMAL_DENOM] <= 0 ||
       (tokenAmountShouldPay > 0 && balances.cw20 <= tokenAmountShouldPay)
     ) {
-      toast.warn("Insufficient TESTCORE or USD");
+      toast.warn("Insufficient CORE or RIZE");
       return false;
     }
     return true;
@@ -446,6 +467,13 @@ const PageUploadItem: FC<PageUploadItemProps> = ({ className = "" }) => {
     }
   }, [collectionId, collections]);
 
+  const onEditorStateChange = (editorState) => {
+    setEditorState(editorState);
+    setTextDescription(
+      draftToHtml(convertToRaw(editorState.getCurrentContent())) || ""
+    );
+  };
+
   const createItem = async () => {
     if (!validation && metaData?.length > 0) {
       toast.warn("Please try the validation");
@@ -590,6 +618,7 @@ const PageUploadItem: FC<PageUploadItemProps> = ({ className = "" }) => {
           chainId: currentNetworkSymbol || 1,
           metadataURIs: uris,
           networkSymbol: currentNetworkSymbol || 0,
+          coreumPaymentUnit: coreumPaymentCoin,
         };
         await saveMultipleItem(params, paths);
       } else {
@@ -683,6 +712,12 @@ const PageUploadItem: FC<PageUploadItemProps> = ({ className = "" }) => {
     }
     setJsonItems(list);
     setSelJsonFiles(jsonList);
+  };
+
+  const handleClear = () => {
+    fileInputRef.current.value = "";
+    setJsonItems([]);
+    setSelJsonFiles([]);
   };
 
   const handleValidate = () => {
@@ -830,7 +865,7 @@ const PageUploadItem: FC<PageUploadItemProps> = ({ className = "" }) => {
             </div>
             <div className="w-full border-b-2 border-neutral-100 dark:border-neutral-600"></div>
             <h3 className="text-lg font-semibold sm:text-2xl ">
-              File category
+              Item category
             </h3>
             <div className=" overflow-hidden rounded-2xl shadow-xl bg-white dark:bg-[#191818] border border-neutral-200 dark:border-neutral-600">
               <div className="relative flex px-5 py-6 space-x-10 justify-around">
@@ -998,6 +1033,48 @@ const PageUploadItem: FC<PageUploadItemProps> = ({ className = "" }) => {
                   </div>
                 </div>
               )}
+              {currentNetworkSymbol === PLATFORM_NETWORKS.COREUM && (
+                <>
+                  <h3 className="text-lg font-semibold sm:text-2xl ">
+                    Payment coin/token
+                  </h3>
+                  <div className=" overflow-hidden rounded-2xl shadow-xl bg-white dark:bg-[#191818] border border-neutral-200 dark:border-neutral-600">
+                    <div className="relative flex px-5 py-6 space-x-10 justify-around">
+                      {/* {coreumPaymentUnits.map((item, index) => {
+                        return (
+                          <div key={index} className=""> */}
+                      <Radio
+                        id={"CORE"}
+                        name="coreumPaymentCoins"
+                        label={"CORE"}
+                        defaultChecked={
+                          coreumPaymentCoin === COREUM_PAYMENT_COINS.CORE
+                        }
+                        onChange={(checked) => {
+                          if (Boolean(checked) == true)
+                            setCoreumPaymentCoin(COREUM_PAYMENT_COINS.CORE);
+                        }}
+                      />
+                      <Radio
+                        id={"RIZE"}
+                        name="coreumPaymentCoins"
+                        label={"RIZE"}
+                        defaultChecked={
+                          coreumPaymentCoin === COREUM_PAYMENT_COINS.RIZE
+                        }
+                        disabled={true}
+                        onChange={(checked) => {
+                          if (Boolean(checked) == true)
+                            setCoreumPaymentCoin(COREUM_PAYMENT_COINS.RIZE);
+                        }}
+                      />
+                      {/* </div>
+                        );
+                      })} */}
+                    </div>
+                  </div>
+                </>
+              )}
               <FormItem label="Item Name">
                 <Input
                   value={textName}
@@ -1016,14 +1093,11 @@ const PageUploadItem: FC<PageUploadItemProps> = ({ className = "" }) => {
                   </div>
                 }
               >
-                <Textarea
-                  rows={6}
-                  className="mt-1.5"
-                  placeholder="..."
-                  value={textDescription}
-                  onChange={(event) => {
-                    setTextDescription(event.target.value);
-                  }}
+                <Editor
+                  editorState={editorState}
+                  wrapperClassName="demo-wrapper mt-1.5 "
+                  editorClassName="demo-editor min-h-[300px] border-2 rounded-lg border-neutral-100 dark:border-neutral-400 "
+                  onEditorStateChange={onEditorStateChange}
                 />
               </FormItem>
 
@@ -1218,13 +1292,19 @@ const PageUploadItem: FC<PageUploadItemProps> = ({ className = "" }) => {
                         setNftItems={setNftItems}
                         setJsonItems={setJsonItems}
                       />
-                      <div className="w-full md:col-span-1 flex flex-col">
+                      <div className="w-full md:col-span-1 flex flex-col gap-2">
                         <label
                           htmlFor="json-upload"
-                          className="mb-4 nc-Button relative h-auto inline-flex items-center justify-center rounded-full transition-colors text-sm sm:text-base font-medium px-4 py-3 sm:px-6  ttnc-ButtonPrimary disabled:bg-opacity-70 bg-green-400 hover:bg-green-500 text-neutral-50  focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 dark:focus:ring-offset-0"
+                          className="nc-Button relative h-auto inline-flex justify-start items-center rounded-full transition-colors text-sm sm:text-base font-medium px-4 py-3 sm:px-6  ttnc-ButtonPrimary disabled:bg-opacity-70 bg-green-400 hover:bg-green-500 text-primary-shadow text-gray-900 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 dark:focus:ring-offset-0"
                         >
-                          Upload
+                          <GoCloudUpload
+                            className="ml-2"
+                            color="black"
+                            size={20}
+                          />
+                          <span className="pl-2">Upload</span>
                           <input
+                            ref={fileInputRef}
                             id="json-upload"
                             name="json-upload"
                             type="file"
@@ -1234,9 +1314,28 @@ const PageUploadItem: FC<PageUploadItemProps> = ({ className = "" }) => {
                             multiple
                           />
                         </label>
-                        <ButtonPrimary onClick={handleValidate}>
-                          Validate
-                        </ButtonPrimary>
+                        <button
+                          className="nc-Button relative h-auto inline-flex justify-start items-center rounded-full transition-colors text-sm sm:text-base font-medium px-4 py-3 sm:px-6  ttnc-ButtonPrimary disabled:bg-opacity-70 bg-green-400 hover:bg-green-500 text-primary-shadow text-gray-900 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 dark:focus:ring-offset-0"
+                          onClick={handleValidate}
+                        >
+                          <GrValidate
+                            className="ml-2"
+                            color="black"
+                            size={20}
+                          />
+                          <span className="pl-2">Validate</span>
+                        </button>
+                        <button
+                          className="nc-Button relative h-auto inline-flex justify-start items-center rounded-full transition-colors text-sm sm:text-base font-medium px-4 py-3 sm:px-6  ttnc-ButtonPrimary disabled:bg-opacity-70 bg-green-400 hover:bg-green-500 text-primary-shadow text-gray-900 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 dark:focus:ring-offset-0"
+                          onClick={handleClear}
+                        >
+                          <AiOutlineDelete
+                            className="ml-2"
+                            color="black"
+                            size={21}
+                          />
+                          <span className="pl-2">Clear</span>
+                        </button>
                       </div>
                     </div>
                   </>

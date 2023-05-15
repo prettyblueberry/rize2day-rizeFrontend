@@ -69,42 +69,42 @@ const SectionSliderCollections2: FC<SectionSliderCollections2Props> = ({
     });
   }, []);
 
-  // useEffect(() => {
-  //   if (!sliderRef.current) {
-  //     return;
-  //   }
+  useEffect(() => {
+    if (!sliderRef.current) {
+      return;
+    }
 
-  //   const OPTIONS: Glide.Options = {
-  //     perView: 3,
-  //     gap: 32,
-  //     bound: true,
-  //     breakpoints: {
-  //       1280: {
-  //         gap: 28,
-  //         perView: 2.5,
-  //       },
-  //       1024: {
-  //         gap: 20,
-  //         perView: 2.15,
-  //       },
-  //       768: {
-  //         gap: 20,
-  //         perView: 1.5,
-  //       },
+    const OPTIONS: Glide.Options = {
+      perView: 3,
+      gap: 32,
+      bound: true,
+      breakpoints: {
+        1280: {
+          gap: 28,
+          perView: 2.5,
+        },
+        1024: {
+          gap: 20,
+          perView: 2.15,
+        },
+        768: {
+          gap: 20,
+          perView: 1.5,
+        },
 
-  //       500: {
-  //         gap: 20,
-  //         perView: 1,
-  //       },
-  //     },
-  //   };
+        500: {
+          gap: 20,
+          perView: 1,
+        },
+      },
+    };
 
-  //   // let slider = new Glide(sliderRef.current, OPTIONS);
-  //   let slider = new Glide(`.${UNIQUE_CLASS}`, OPTIONS);
-  //   slider.mount();
-  //   // @ts-ignore
-  //   return () => slider.destroy();
-  // }, [sliderRef, UNIQUE_CLASS, globalHotCollections]);
+    // let slider = new Glide(sliderRef.current, OPTIONS);
+    let slider = new Glide(`.${UNIQUE_CLASS}`, OPTIONS);
+    slider.mount();
+    // @ts-ignore
+    return () => slider.destroy();
+  }, [sliderRef, UNIQUE_CLASS, globalHotCollections]);
 
   return (
     <div className={`nc-SectionSliderCollections2 ${className}`}>

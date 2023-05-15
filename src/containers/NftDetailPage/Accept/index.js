@@ -36,12 +36,13 @@ const Accept = ({ className = "", onOk, onCancel, nft = {} }) => {
         <ButtonPrimary className={cn("button", styles.button)} onClick={onOk}>
           Accept bid
         </ButtonPrimary>
-        <ButtonPrimary
-          className={cn("button-stroke", styles.button)}
+
+        <button
+          className="bg-transparent text-[#33FF00] border-2 rounded-lg border-[#33FF00] w-full py-4"
           onClick={onCancel}
         >
           Cancel
-        </ButtonPrimary>
+        </button>
       </div>
     </div>
   );
