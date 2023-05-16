@@ -1,0 +1,9 @@
+<svg version="1.2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24">
+	<title>filter-svg</title>
+	<defs>
+		<image  width="22" height="20" id="img1" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABYAAAAUCAMAAAC+oj0CAAAAAXNSR0IB2cksfwAAADlQTFRFAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAvHZQPQAAABN0Uk5TAHCvbxDP/9DAsOAgP2BAoIDv33gWa+AAAACDSURBVHicnZDRCsMgDEWji7dN49J2//+xjVpBHGPQ8+YlxNxD1AgxvmiGE5YViadYNiXSLQ6D2cG7LgLXV85KgoKV2GDthZ3YHBwlPnzaKnrvPn3cTpkvWZD8mPkS/04kfIVP+CVg/Sug1+UuYCyP3bqAobzX5SYgYChfdxcB+nki4AJZXQYPgb+z1QAAAABJRU5ErkJggg=="/>
+	</defs>
+	<style>
+	</style>
+	<use id="Background" href="#img1" x="1" y="2"/>
+</svg>
