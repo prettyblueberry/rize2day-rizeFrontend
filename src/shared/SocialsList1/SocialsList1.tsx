@@ -16,7 +16,7 @@ export interface SocialsList1Props {
 
 const socials: SocialType[] = [
   { name: "Facebook", icon: <FiFacebook color={'#33FF00'} />, href: "#" },
-  { name: "Vimeo", icon: <RiVimeoLine color={'#33FF00'} />, href: "#" },
+  // { name: "Vimeo", icon: <RiVimeoLine color={'#33FF00'} />, href: "#" },
   { name: "Youtube", icon: <FiYoutube color={'#33FF00'} />, href: "#" },
   { name: "Twitter", icon: <TbBrandTwitter color={'#33FF00'} />, href: "#" },
   { name: "Telegram", icon: <TbBrandTelegram color={'#33FF00'} />, href: "#" },

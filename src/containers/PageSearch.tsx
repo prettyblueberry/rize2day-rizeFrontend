@@ -252,7 +252,7 @@ const PageSearch: FC<PageSearchProps> = ({ className = "" }) => {
   }
 
   return (
-    <div className={`nc-PageSearch relative min-h-[calc(100vh-346px)] h-1 ${className}`} data-nc-id="PageSearch">
+    <div className={`nc-PageSearch relative min-h-[calc(100vh-346px)] ${className}`} data-nc-id="PageSearch">
       <Helmet>
         <title>Marketplace || Rize2Day </title>
       </Helmet>
@@ -281,7 +281,7 @@ const PageSearch: FC<PageSearchProps> = ({ className = "" }) => {
         </header>
       </div>
 
-      <div className="relative h-full px-10 py-6 lg:pb-28 lg:pt-10 space-y-16 lg:space-y-28 overflow-hidden">
+      <div className="relative h-full px-10 py-6 lg:pb-28 lg:pt-10 space-y-16 lg:space-y-28 overflow-hidden" style={{ minHeight: 'inherit' }}>
         <main ref={pageRef} className="h-full">
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-x-8 gap-y-10 mt-8 lg:mt-10">
             {collections &&
@@ -316,7 +316,7 @@ const PageSearch: FC<PageSearchProps> = ({ className = "" }) => {
           </div>
 
           <div className=" text-center mt-10 m-10">
-            <span>&nbsp;{viewNoMore === true && "No more items"}&nbsp;</span>
+            <span>&nbsp;{(viewNoMore === true || collections?.length === 0) && "No more items"}&nbsp;</span>
           </div>
           {/* 
           <div className="flex flex-col mt-12 lg:mt-16 space-y-5 sm:space-y-0 sm:space-x-3 sm:flex-row sm:justify-between sm:items-center">

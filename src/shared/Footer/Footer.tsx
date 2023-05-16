@@ -97,7 +97,7 @@ const Footer: React.FC = () => {
           <div className="flex flex-col">
             <div className="flex items-end pt-6 pb-4 gap-4">
               <Logo className="w-40" />
-              <p className="text-gray-700 h-full">Gather, Create, Evolve</p>
+              <p className="text-gray-700 h-full">Gather,&nbsp;&nbsp;Create,&nbsp;&nbsp;Evolve</p>
             </div>
             <div className="flex">
               <Link
@@ -106,17 +106,18 @@ const Footer: React.FC = () => {
               >
                 Dashboard
               </Link>
+              <a
+                target="_blank"
+                href={"https://stake-coreum.rize2day.com/"}
+                className="inset-0 py-2 px-4 dark:text-white text-neutral-900 text-sm transition cursor-pointer duration-150 ease-in-out rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-700"
+              >
+                Stake Coreum
+              </a>
               <Link
                 to={"/"}
                 className="inset-0 py-2 px-4 dark:text-white text-neutral-900 text-sm transition cursor-pointer duration-150 ease-in-out rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-700"
               >
-                Swap
-              </Link>
-              <Link
-                to={"/"}
-                className="inset-0 py-2 px-4 dark:text-white text-neutral-900 text-sm transition cursor-pointer duration-150 ease-in-out rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-700"
-              >
-                Pool
+                Bridge
               </Link>
             </div>
             <SocialsList1 className="flex items-center gap-3 sm:gap-5 md:gap-8 lg:gap-8 pt-4" />

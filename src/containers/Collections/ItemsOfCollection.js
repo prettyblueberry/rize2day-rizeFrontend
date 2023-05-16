@@ -322,7 +322,7 @@ const ItemsOfCollection = () => {
           className={styles.collectionDescription}
           style={{ textAlign: "center", marginTop: "15px" }}
         >
-          {collection && parse(collection.description || "")}
+          {collection && parse(collection?.description || "")}
         </div>
         <div className="flex justify-end py-2 gap-4">
           {currentUsr && currentUsr?._id === collection?.owner?._id && (
