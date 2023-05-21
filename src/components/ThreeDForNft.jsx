@@ -7,6 +7,7 @@ import { IconButton } from "@mui/material";
 import NcModal from "shared/NcModal/NcModal";
 import ReactLoading from 'react-loading';
 import bgImg from '../images/3dbg.jpg';
+import envImage from '../images/HDR_041_Path.hdr'
 
 const NFT3Canvas = ({
   nftId,
@@ -38,6 +39,7 @@ const NFT3Canvas = ({
             <model-viewer
               src={src}
               skybox-image={bgImg}
+	      environment-image={envImage}
               camera-controls
               shadow-intensity="1"
               autoplay
